@@ -1,14 +1,14 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, CircleNotch } from "@phosphor-icons/react";
-export function CheckForm() {
+import { ArrowRight, CircleNotch } from "@phosphor-icons/react";
+export function CheckForm({ id = "check" }: { id?: string }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const router = useRouter();
   return (
     <form
-      id="check"
+      id={id}
       className="check-form"
       onSubmit={async (e) => {
         e.preventDefault();
@@ -35,9 +35,10 @@ export function CheckForm() {
     >
       <div className="form-fields">
         <div>
-          <label htmlFor="business-name">Business name</label>
+          <label htmlFor={`${id}-business-name`}>Business name</label>
           <input
-            id="business-name"
+            id={`${id}-business-name`}
+            aria-describedby={`${id}-note`}
             name="name"
             placeholder="e.g. Brew Lane Cafe"
             required
@@ -47,9 +48,10 @@ export function CheckForm() {
           />
         </div>
         <div>
-          <label htmlFor="business-city">City</label>
+          <label htmlFor={`${id}-business-city`}>City</label>
           <input
-            id="business-city"
+            id={`${id}-business-city`}
+            aria-describedby={`${id}-note`}
             name="city"
             placeholder="e.g. Portland, USA"
             required
@@ -66,7 +68,7 @@ export function CheckForm() {
             </>
           ) : (
             <>
-              Run free check <ArrowUpRight size={18} />
+              Run free check <ArrowRight size={18} />
             </>
           )}
         </button>
@@ -76,7 +78,7 @@ export function CheckForm() {
           {error}
         </p>
       )}
-      <p className="form-note">
+      <p className="form-note" id={`${id}-note`}>
         No signup. No SEO knowledge needed. Just your business.
       </p>
     </form>

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, Copy, ArrowUpRight, Printer } from "@phosphor-icons/react";
+import { Check, Copy, ArrowRight, Printer } from "@phosphor-icons/react";
 import { Badge } from "./ui";
 import type { Facts, Fix } from "@/lib/types";
 export function FixEditor({ id, checkId }: { id: string; checkId: string }) {
@@ -170,7 +170,7 @@ export function FixEditor({ id, checkId }: { id: string; checkId: string }) {
                   </button>
                   {fix.slug && (
                     <Link className="button" href={`/p/${fix.slug}`}>
-                      View published page <ArrowUpRight size={16} />
+                      View published page <ArrowRight size={16} />
                     </Link>
                   )}
                 </>

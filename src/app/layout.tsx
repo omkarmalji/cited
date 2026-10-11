@@ -3,7 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import "../generated/threeui.css";
 import { Nav } from "@/components/nav";
-import { METHOD } from "@/lib/types";
+import { Footer } from "@/components/footer";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -44,13 +44,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </a>
         <Nav />
         {children}
-        <footer className="container footer">
-          <p>{METHOD}</p>
-          <div>
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
-          </div>
-        </footer>
+        <Footer />
       </body>
     </html>
   );

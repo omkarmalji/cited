@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowUpRight,
+  ArrowRight,
   CheckCircle,
   Circle,
   CircleNotch,
@@ -336,11 +336,11 @@ export function Report({ id }: { id: string }) {
                       {f.status === "approved"
                         ? "View approved fix"
                         : "Edit and approve"}{" "}
-                      <ArrowUpRight size={16} />
+                      <ArrowRight size={16} />
                     </Link>
                     {f.slug && (
                       <Link href={`/p/${f.slug}`} className="text-link">
-                        View page <ArrowUpRight size={16} />
+                        View page <ArrowRight size={16} />
                       </Link>
                     )}
                   </div>
@@ -428,7 +428,7 @@ function WeeklyRechecks({ check }: { check: Check }) {
       </p>
       {check.latestRecheckId ? (
         <Link className="button" href={`/check/${check.latestRecheckId}`}>
-          View latest weekly report <ArrowUpRight size={16} />
+          View latest weekly report <ArrowRight size={16} />
         </Link>
       ) : (
         <>

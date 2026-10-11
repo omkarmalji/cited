@@ -9,3 +9,4 @@ playwright-report/
 *.tsbuildinfo
 artifacts/
 CONTEXT.md
+.playwright-mcp/

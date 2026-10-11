@@ -1,12 +1,13 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  Check,
+  Plus,
   ArrowUpRight,
   GlobeHemisphereWest,
   ChatCircleText,
   Star,
   Code,
-  CheckCircle,
   MagnifyingGlass,
   FileText,
   Quotes,
@@ -15,7 +16,9 @@ import {
 import { HeroScene } from "@/components/hero-scene";
 import { CheckForm } from "@/components/check-form";
 import { Motion } from "@/components/motion";
-import { Badge, Dots } from "@/components/ui";
+import { Badge } from "@/components/ui";
+import { SampleReport } from "@/components/sample-report";
+import { ComingSoon } from "@/components/coming-soon";
 import { examples } from "@/lib/examples";
 const fixes = [
   {
@@ -50,12 +53,12 @@ const fixes = [
 export default function Home() {
   return (
     <Motion>
-      <main id="main">
+      <main id="main" className="landing-page">
         <section className="hero">
           <HeroScene />
           <div className="container hero-content">
             <div className="hero-copy">
-              <a href="#honesty" className="announcement" data-enter>
+              <a href="#how-it-works" className="announcement" data-enter>
                 AI visibility for local businesses <ArrowRight size={14} />
               </a>
               <h1 data-enter>
@@ -69,9 +72,45 @@ export default function Home() {
                 Understand why. Know what to fix.
               </p>
             </div>
+            <div className="hero-preview" aria-hidden="true" inert>
+              <SampleReport />
+            </div>
             <div className="hero-form" data-enter>
               <CheckForm />
             </div>
+          </div>
+        </section>
+        <section
+          className="social-proof"
+          aria-label="Community preview"
+          data-reveal
+        >
+          <div className="container social-proof-inner">
+            <div>
+              <p>Trusted by local businesses in 40+ cities</p>
+              <span className="placeholder-note mono">
+                Preview metrics, not live totals
+              </span>
+            </div>
+            {/* TODO: Replace all placeholder metrics, including the 40+ cities claim, with verified usage data before launch. */}
+            <dl className="proof-stats">
+              <div>
+                <dt>Businesses checked</dt>
+                <dd>
+                  1,200<span>+</span>
+                </dd>
+              </div>
+              <div>
+                <dt>Questions asked</dt>
+                <dd>
+                  9,600<span>+</span>
+                </dd>
+              </div>
+              <div>
+                <dt>Average fixes found</dt>
+                <dd>4.8</dd>
+              </div>
+            </dl>
           </div>
         </section>
         <section
@@ -92,39 +131,10 @@ export default function Home() {
               See exactly where you stand.
             </p>
             <Link className="text-link" href="/examples/brew-lane">
-              Explore the sample report <ArrowUpRight size={18} />
+              Explore the sample report <ArrowRight size={18} />
             </Link>
           </div>
-          <div className="receipt">
-            <div className="receipt-header">
-              <span className="traffic" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </span>
-              <span>brew-lane.visibility</span>
-              <Badge label="Sample data" />
-            </div>
-            <div className="receipt-body">
-              <div className="receipt-business">
-                <span>BUSINESS</span>
-                <strong>Brew Lane Cafe</strong>
-                <span>Portland, United States</span>
-              </div>
-              <div className="receipt-question">
-                <span>QUESTION</span>
-                <p>“Where can I find a quiet cafe in Portland?”</p>
-                <Dots count={3} />
-              </div>
-              <div className="receipt-result">
-                <span>OUTLOOK</span>
-                <Badge label="Winnable now" />
-              </div>
-              <div className="receipt-bottom">
-                <CheckCircle size={16} />5 runs. Sources attached. No guesswork.
-              </div>
-            </div>
-          </div>
+          <SampleReport />
         </section>
         <section
           id="examples"
@@ -132,7 +142,7 @@ export default function Home() {
           data-reveal
         >
           <div className="examples-label">
-            <span>Meet your next step.</span>
+            <span className="eyebrow">Meet your next step.</span>
             <p>Try a saved example. No keys, no waiting.</p>
             <Badge label="Sample data" />
           </div>
@@ -152,6 +162,7 @@ export default function Home() {
         </section>
         <section id="how-it-works" className="container section" data-reveal>
           <div className="section-header">
+            <p className="eyebrow">How it works</p>
             <h2>
               From “am I invisible?”
               <br />
@@ -161,10 +172,12 @@ export default function Home() {
           </div>
           <div className="steps">
             <article>
-              <span className="step-icon">
-                <MagnifyingGlass size={26} />
-              </span>
-              <span className="step-number mono">01</span>
+              <div className="numbered-icon">
+                <span className="step-icon">
+                  <MagnifyingGlass size={26} />
+                </span>
+                <span className="step-number mono">01</span>
+              </div>
               <h3>Find your business.</h3>
               <p>
                 Enter your name and city. Check the details we find. Correct
@@ -172,10 +185,12 @@ export default function Home() {
               </p>
             </article>
             <article>
-              <span className="step-icon">
-                <Quotes size={26} />
-              </span>
-              <span className="step-number mono">02</span>
+              <div className="numbered-icon">
+                <span className="step-icon">
+                  <Quotes size={26} />
+                </span>
+                <span className="step-number mono">02</span>
+              </div>
               <h3>See what AI says.</h3>
               <p>
                 We ask eight questions your customers might ask. Five times
@@ -183,10 +198,12 @@ export default function Home() {
               </p>
             </article>
             <article>
-              <span className="step-icon">
-                <FileText size={26} />
-              </span>
-              <span className="step-number mono">03</span>
+              <div className="numbered-icon">
+                <span className="step-icon">
+                  <FileText size={26} />
+                </span>
+                <span className="step-number mono">03</span>
+              </div>
               <h3>Approve your next move.</h3>
               <p>
                 Get a practical fix pack built from your facts. Review, edit,
@@ -197,6 +214,7 @@ export default function Home() {
         </section>
         <section id="fix-pack" className="container section" data-reveal>
           <div className="section-header">
+            <p className="eyebrow">The fix pack</p>
             <h2>
               Don’t just find the gaps.
               <br />
@@ -207,7 +225,9 @@ export default function Home() {
           <div className="fix-grid">
             {fixes.map((f) => (
               <article className="fix-feature" key={f.title}>
-                <f.icon size={28} weight="light" />
+                <span className="feature-icon">
+                  <f.icon size={20} />
+                </span>
                 <h3>{f.title}</h3>
                 <p>{f.text}</p>
                 <span className="feature-detail mono">{f.detail}</span>
@@ -220,7 +240,7 @@ export default function Home() {
           className="container section honesty-section"
           data-reveal
         >
-          <ShieldCheck size={32} weight="light" />
+          <p className="eyebrow">Our principles</p>
           <h2>
             Honest by design.
             <br />
@@ -228,7 +248,12 @@ export default function Home() {
           </h2>
           <div className="principles">
             <article>
-              <span className="mono">[01]</span>
+              <div className="numbered-icon">
+                <span className="step-icon">
+                  <FileText size={24} />
+                </span>
+                <span className="step-number mono">01</span>
+              </div>
               <h3>No source, no claim.</h3>
               <p>
                 Every finding links to what we read. You can check the evidence
@@ -236,7 +261,12 @@ export default function Home() {
               </p>
             </article>
             <article>
-              <span className="mono">[02]</span>
+              <div className="numbered-icon">
+                <span className="step-icon">
+                  <Quotes size={24} />
+                </span>
+                <span className="step-number mono">02</span>
+              </div>
               <h3>Repeat, then report.</h3>
               <p>
                 Five runs, shown as five dots. We show variation instead of
@@ -244,7 +274,12 @@ export default function Home() {
               </p>
             </article>
             <article>
-              <span className="mono">[03]</span>
+              <div className="numbered-icon">
+                <span className="step-icon">
+                  <ShieldCheck size={24} />
+                </span>
+                <span className="step-number mono">03</span>
+              </div>
               <h3>Your facts. Your approval.</h3>
               <p>
                 No invented hours or awards. No automatic publishing. Every fix
@@ -252,13 +287,10 @@ export default function Home() {
               </p>
             </article>
           </div>
-          <p className="honesty-note">
-            An estimate of AI visibility, not a promise of ranking. Every
-            question gets a realistic outlook.
-          </p>
         </section>
         <section id="pricing" className="container section" data-reveal>
           <div className="section-header">
+            <p className="eyebrow">Pricing</p>
             <h2>
               Small business.
               <br />
@@ -269,60 +301,142 @@ export default function Home() {
           <div className="pricing-grid">
             <article className="price-card">
               <span className="mono">Free check</span>
-              <div className="price">$0</div>
+              <div className="price">
+                $0<span>forever</span>
+              </div>
               <p>Find your starting point.</p>
               <ul>
-                <li>8 customer questions, 5 runs each</li>
-                <li>Sources and rival explanations</li>
-                <li>A fact-checked fix pack</li>
-                <li>Try saved examples anytime</li>
+                <li>
+                  <Check size={15} aria-hidden="true" />8 customer questions, 5
+                  runs each
+                </li>
+                <li>
+                  <Check size={15} aria-hidden="true" />
+                  Sources and rival explanations
+                </li>
+                <li>
+                  <Check size={15} aria-hidden="true" />A fact-checked fix pack
+                </li>
+                <li>
+                  <Check size={15} aria-hidden="true" />
+                  Try saved examples anytime
+                </li>
               </ul>
               <a className="button strong" href="#check">
-                Run free check <ArrowUpRight size={16} />
+                Run free check <ArrowRight size={16} />
               </a>
             </article>
-            <article className="price-card">
-              <span className="mono">Owner</span>
+            <article className="price-card popular">
+              <div className="plan-heading">
+                <span className="plan-name mono">
+                  Owner <span className="plan-badge">Coming soon</span>
+                </span>
+                <span className="plan-badge popular-badge">Most popular</span>
+              </div>
               <div className="price">
                 $19<span>/ month</span>
               </div>
               <p>Build a habit of being found.</p>
               <ul>
-                <li>Weekly rechecks and trends</li>
-                <li>Your hosted page and fix packs</li>
-                <li>Review requests and QR card</li>
+                <li>
+                  <Check size={15} aria-hidden="true" />
+                  Weekly rechecks and trends
+                </li>
+                <li>
+                  <Check size={15} aria-hidden="true" />
+                  Your hosted page and fix packs
+                </li>
+                <li>
+                  <Check size={15} aria-hidden="true" />
+                  Review requests and QR card
+                </li>
               </ul>
-              <span className="availability mono">
-                Planned pricing. No payments today.
-              </span>
+              <ComingSoon plan="Owner" />
             </article>
             <article className="price-card">
-              <span className="mono">Agency</span>
+              <span className="plan-name mono">
+                Agency <span className="plan-badge">Coming soon</span>
+              </span>
               <div className="price">
                 $79<span>/ month</span>
               </div>
               <p>Clarity for your clients.</p>
               <ul>
-                <li>Planned multi-client workspace</li>
-                <li>White-label reports</li>
-                <li>Shared approval workflows</li>
+                <li>
+                  <Check size={15} aria-hidden="true" />
+                  Planned multi-client workspace
+                </li>
+                <li>
+                  <Check size={15} aria-hidden="true" />
+                  White-label reports
+                </li>
+                <li>
+                  <Check size={15} aria-hidden="true" />
+                  Shared approval workflows
+                </li>
               </ul>
-              <span className="availability mono">
-                Post-hackathon. Not available yet.
-              </span>
+              <ComingSoon plan="Agency" />
             </article>
           </div>
         </section>
+        <section id="faq" className="container section faq-section" data-reveal>
+          <div className="section-header">
+            <p className="eyebrow">A few good questions</p>
+            <h2>Clarity starts here.</h2>
+          </div>
+          <div className="faq-list">
+            {[
+              {
+                question: "How accurate is an AI visibility check?",
+                answer:
+                  "An estimate of AI visibility, not a promise of ranking. Every question gets a realistic outlook. Five runs show how often your business appears, and linked sources let you check the evidence. Results can vary as models and public information change.",
+              },
+              {
+                question: "Which AI assistants do you check?",
+                answer:
+                  "Cited pairs NVIDIA Nemotron with fresh web search through Tavily to explore the questions your customers ask. This gives you source-backed answers and practical next steps. It is a transparent simulation of AI recommendations, rather than a live test of ChatGPT, Claude, or Gemini.",
+              },
+              {
+                question: "How does scoring work?",
+                answer:
+                  "We ask eight customer questions five times each. Your report counts how many of those 40 answers recommend your business. Each question also shows its five-run result, sources, rival explanations, and realistic outlook, so you can see what sits behind the total.",
+              },
+              {
+                question: "What happens to my business data?",
+                answer:
+                  "We store the business details, confirmed facts, sources, answers, and drafts needed for your report. Live checks send relevant facts and public web content to Nebius and Tavily. Reports stay in your browser session unless you choose to save them to an account. A hosted page becomes public only after your approval. Do not enter private customer or sensitive information.",
+              },
+              {
+                question: "What is included in the fix pack?",
+                answer:
+                  "A hosted AI-readable page, a Google Business Profile description with posts and Q&A, honest review requests with a printable QR card, and website schema with plain-language instructions. Everything is drafted from your confirmed facts. You can review, edit, and approve each fix.",
+              },
+              {
+                question: "Is the free check really free?",
+                answer:
+                  "Yes. Your starting check and saved examples are free, with no signup or payment required. Owner and Agency are planned tiers and are coming soon. There is no billing flow today.",
+              },
+            ].map(({ question, answer }) => (
+              <details className="faq-item" key={question}>
+                <summary>
+                  {question}
+                  <Plus size={20} aria-hidden="true" />
+                </summary>
+                <p>{answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
         <section className="container final-cta" data-reveal>
-          <p>Your next customer is asking.</p>
+          <p className="eyebrow">Your next customer is asking.</p>
           <h2>
             Give AI a reason
             <br />
             to say your name.
           </h2>
-          <a className="text-link" href="#check">
-            Check your business <ArrowUpRight size={22} />
-          </a>
+          <div className="hero-form">
+            <CheckForm id="final-check" />
+          </div>
         </section>
       </main>
     </Motion>
