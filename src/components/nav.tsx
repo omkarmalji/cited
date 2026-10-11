@@ -1,35 +1,42 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, List, X } from "@phosphor-icons/react";
+import { List, X } from "@phosphor-icons/react";
 import { Wordmark } from "./ui";
+const left = [
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#examples", label: "Examples" },
+];
+const right = [
+  { href: "/#honesty", label: "Principles" },
+  { href: "/#pricing", label: "Pricing" },
+];
 export function Nav() {
   const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
   return (
     <header className="nav">
-      <div className="container nav-inner">
-        <Wordmark />
+      <div className="nav-bar">
+        <span className="nav-tag">cited.check</span>
         <nav
           aria-label="Main navigation"
           id="main-navigation"
           className={open ? "nav-links open" : "nav-links"}
         >
-          <Link href="/#how-it-works" onClick={() => setOpen(false)}>
-            How it works
-          </Link>
-          <Link href="/#fix-pack" onClick={() => setOpen(false)}>
-            The fix pack
-          </Link>
-          <Link href="/#examples" onClick={() => setOpen(false)}>
-            Try an example
-          </Link>
+          {[...left, ...right].map((l, i) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={close}
+              className={i >= left.length ? "nav-right" : ""}
+            >
+              {l.label}
+            </Link>
+          ))}
         </nav>
-        <Link
-          className="button strong nav-cta"
-          href="/#check"
-          onClick={() => setOpen(false)}
-        >
-          Run free check <ArrowRight size={16} />
+        <Wordmark />
+        <Link className="button strong nav-cta" href="/#check" onClick={close}>
+          Run free check
         </Link>
         <button
           className="menu-button"
@@ -38,7 +45,7 @@ export function Nav() {
           aria-expanded={open}
           aria-controls="main-navigation"
         >
-          {open ? <X size={24} /> : <List size={24} />}
+          {open ? <X size={22} /> : <List size={22} />}
         </button>
       </div>
     </header>

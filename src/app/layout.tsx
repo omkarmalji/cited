@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import "../generated/threeui.css";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
-const inter = Inter({
+const sans = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-inter",
-  weight: ["400", "500", "600"],
+  variable: "--font-sans",
+  weight: ["300", "400", "500", "600"],
   display: "swap",
 });
 const mono = JetBrains_Mono({
@@ -36,7 +36,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${inter.variable} ${mono.variable}`}
+      className={`${sans.variable} ${mono.variable}`}
     >
       <body>
         <a className="skip-link" href="#main">

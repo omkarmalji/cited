@@ -17,18 +17,16 @@ export function Motion({ children }: { children: React.ReactNode }) {
           ease: "power3.out",
           clearProps: "all",
         });
-        gsap.utils
-          .toArray<HTMLElement>("[data-reveal]")
-          .forEach((el) =>
-            gsap.from(el, {
-              y: 24,
-              opacity: 0,
-              duration: 0.7,
-              ease: "power2.out",
-              clearProps: "all",
-              scrollTrigger: { trigger: el, start: "top 90%", once: true },
-            }),
-          );
+        gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) =>
+          gsap.from(el, {
+            y: 24,
+            opacity: 0,
+            duration: 0.7,
+            ease: "power2.out",
+            clearProps: "all",
+            scrollTrigger: { trigger: el, start: "top 90%", once: true },
+          }),
+        );
       }, ref);
       return () => context.revert();
     });

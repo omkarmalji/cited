@@ -5,6 +5,8 @@ const PredictiveArcCanvas = dynamic(
   () => import("../generated/threeui").then((m) => m.PredictiveArcCanvas),
   { ssr: false },
 );
+// Data Pixel Arc is emerald by default; the component's own hue prop rotates it
+// to Cited's copper accent without touching the registered source.
 export function HeroScene() {
   const [motion, setMotion] = useState(false);
   useEffect(() => {
@@ -18,10 +20,11 @@ export function HeroScene() {
     <div className="shader-frame" aria-hidden="true">
       {motion && (
         <PredictiveArcCanvas
+          variant="data-pixel"
           mode="dark"
           speed={1.0}
-          hue={0}
-          saturation={1.0}
+          hue={-100}
+          saturation={1.25}
           brightness={1.0}
         />
       )}

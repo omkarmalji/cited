@@ -7,31 +7,27 @@ export default function Design() {
       <Wordmark />
       <h1>Less noise. More clarity.</h1>
       <p>
-        Cited design system. Inter headings and body, warm violet surfaces,
-        clear actions, readable evidence.
+        Cited design system. Black canvas, thin uppercase Space Grotesk display
+        type, a copper arc accent and readable evidence.
       </p>
       <section className="panel">
         <h2>Color tokens.</h2>
         <div className="swatches">
           {[
-            ["Canvas", "#111015"],
-            ["Surface", "#191621"],
-            ["Accent surface", "#251d35"],
-            ["Hairline", "#37313f"],
-            ["Surface lift", "#0b0e14"],
+            ["Canvas", "#000000"],
+            ["Surface", "#0a0a0a"],
+            ["Accent surface", "#111111"],
+            ["Hairline", "#222222"],
+            ["Hairline strong", "#333333"],
             ["White", "#ffffff"],
-            ["Bone white", "#f0f0f0"],
-            ["Muted text", "#b8b1c3"],
-            ["Secondary text", "#c8c0d5"],
-            ["Iron", "#6e727a"],
-            ["Charcoal", "#464a4d"],
-            ["Iris violet", "#b7a0ff"],
-            ["Iris glow", "#baa7ff"],
+            ["Bone white", "#ededed"],
+            ["Muted text", "#9a9a9a"],
+            ["Dim text", "#808080"],
+            ["Copper accent", "#ff9d57"],
             ["Signal blue", "#3b9eff"],
             ["Sky blue", "#70b8ff"],
             ["Pulse green", "#3ad389"],
             ["Alarm red", "#ff9592"],
-            ["Crimson", "#ff6465"],
             ["Amber", "#ffca16"],
           ].map(([name, color]) => (
             <div className="swatch" key={name}>
@@ -59,7 +55,7 @@ export default function Design() {
         >
           Does it say you?
         </p>
-        <h2 style={{ fontSize: 56, marginTop: 32 }}>Inter 400</h2>
+        <h2 style={{ fontSize: 56, marginTop: 32 }}>Space Grotesk 300</h2>
         <p>Body 16px / 1.5. Small 14px / 1.43. Caption 12px / 1.33.</p>
         <p className="mono" style={{ marginTop: 16 }}>
           JetBrains Mono · 2 of 5 · source [01]

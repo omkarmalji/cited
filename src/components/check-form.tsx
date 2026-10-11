@@ -2,14 +2,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CircleNotch } from "@phosphor-icons/react";
-export function CheckForm({ id = "check" }: { id?: string }) {
+export function CheckForm({
+  id = "check",
+  variant,
+}: {
+  id?: string;
+  variant?: "line";
+}) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const router = useRouter();
   return (
     <form
       id={id}
-      className="check-form"
+      className={variant ? `check-form ${variant}` : "check-form"}
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
@@ -68,7 +74,7 @@ export function CheckForm({ id = "check" }: { id?: string }) {
             </>
           ) : (
             <>
-              Run free check <ArrowRight size={18} />
+              Run free check <ArrowRight size={16} />
             </>
           )}
         </button>
