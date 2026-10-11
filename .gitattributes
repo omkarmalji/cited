@@ -1,0 +1,4 @@
+* text=auto eol=lf
+vendor/threeui/src/** -text
+src/generated/threeui.css -text
+*.woff2 binary

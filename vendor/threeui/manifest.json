@@ -1,0 +1,98 @@
+[
+    {
+        "path":  "src/shaders/predictive-arc/PredictiveArcCollection.tsx",
+        "sha256":  "b77a845ab2fa8e8ef8d9b6812d71efe6f320d865d97ec97b2e15253b5950fd63",
+        "bytes":  2860,
+        "role":  "component"
+    },
+    {
+        "path":  "src/shaders/predictive-arc/PredictiveArcCanvas.tsx",
+        "sha256":  "ebaa5a1b1f785c7772aaedc2b195318fd63bd9c3e5e5d8e175600968b245dae7",
+        "bytes":  4365,
+        "role":  "variant-component"
+    },
+    {
+        "path":  "src/shaders/predictive-arc/predictiveArcRenderer.ts",
+        "sha256":  "fc08c66b13c4a8173c8a88845926b72266d1b1a4fc345c84f44ee61fbfaba92b",
+        "bytes":  4088,
+        "role":  "renderer-source"
+    },
+    {
+        "path":  "src/shaders/data-pixel-arc/DataPixelArcCanvas.tsx",
+        "sha256":  "2e25156d43dfd1bf0fb47384f75df240cd0c4038deae75a8dacae7c213269c5b",
+        "bytes":  2376,
+        "role":  "variant-component"
+    },
+    {
+        "path":  "src/shaders/data-pixel-arc/dataPixelArcRenderer.ts",
+        "sha256":  "65bdfb98424996d935923f39f163e1667f0bc2b8faa458d900f4450beabba0eb",
+        "bytes":  4372,
+        "role":  "variant-renderer-source"
+    },
+    {
+        "path":  "src/shaders/neuform-isolated/NeuformBatchEffects.tsx",
+        "sha256":  "dc68c51bea26b922965de44b4fb8d6c432607508fb2b61e16ed60d245da1a69f",
+        "bytes":  41426,
+        "role":  "variant-component"
+    },
+    {
+        "path":  "src/shaders/neuform-isolated/sources/amber-halftone.html",
+        "sha256":  "3d9ebb64a15a1985c4cef1f01457281a49b2d9900405fd674e8748cac8af00a0",
+        "bytes":  16324,
+        "role":  "canonical-source"
+    },
+    {
+        "path":  "src/shaders/neuform-isolated/sources/signal-particles.html",
+        "sha256":  "613a2005d18795dbc25a5d0f93c3ae4dfecdfcb939ea6e2c5702b82eb1e4bfff",
+        "bytes":  33027,
+        "role":  "canonical-source"
+    },
+    {
+        "path":  "src/shaders/neuform-isolated/sources/override-grid.html",
+        "sha256":  "dc7800f2b6b6329b8b71ea4a06b82af91cff8379701c6a7fa4c9a92d47f89d6c",
+        "bytes":  14421,
+        "role":  "canonical-source"
+    },
+    {
+        "path":  "src/shaders/ribbon-field/RibbonFieldBackground.tsx",
+        "sha256":  "fab02cb57c44c7307afd29cd03d01141372ad90163632b9a6a77910a245a5996",
+        "bytes":  4717,
+        "role":  "variant-component"
+    },
+    {
+        "path":  "src/shaders/ribbon-field/ribbonFieldShaders.ts",
+        "sha256":  "ab578acab44bbff7f3cf67f1c82b3e2e1d03689de3fcbdc23681e8b5a0a3536c",
+        "bytes":  2907,
+        "role":  "variant-renderer-source"
+    },
+    {
+        "path":  "src/shaders/neuform-isolated/NeuformIsolatedEffects.tsx",
+        "sha256":  "fe9856234253bc3c1a13b3afb84f3d84644dfa6d578e7203bb3e1dd5eced1b75",
+        "bytes":  93888,
+        "role":  "variant-component"
+    },
+    {
+        "path":  "src/shaders/neuform-isolated/sources/void-protocol.html",
+        "sha256":  "affd21553ba951c0ff0f5a8e40a84ae70d49aaff3c4c69ea4ae1ec897dec21e3",
+        "bytes":  21426,
+        "role":  "variant-source"
+    },
+    {
+        "path":  "src/shaders/neuform-isolated/NeuformCraftEffects.tsx",
+        "sha256":  "0a1680c3c119dba8c61d946322afa0b64d36dfd80956fb5e7c3fd017d7bfa450",
+        "bytes":  10720,
+        "role":  "variant-component"
+    },
+    {
+        "path":  "src/shaders/neuform-isolated/sources/nexus-unified-flow.html",
+        "sha256":  "fa1a015ae407dc2091c3c96239d28107e973cbc03aa7abef37dd5da791d5428b",
+        "bytes":  15094,
+        "role":  "variant-source"
+    },
+    {
+        "path":  "src/shaders/threeui.css",
+        "sha256":  "efe4447139f1358dd8e9be68edf6fa46cbefbd1de423a4d6c439ca61d2c8eccf",
+        "bytes":  40715,
+        "role":  "shared-style"
+    }
+]

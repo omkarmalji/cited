@@ -1,0 +1,26 @@
+name: Advance Cited checks
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: cited-worker
+  cancel-in-progress: false
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Advance durable queue
+        env:
+          CITED_SITE_URL: ${{ vars.CITED_SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          test -n "$CITED_SITE_URL"
+          test -n "$CRON_SECRET"
+          for attempt in 1 2 3; do
+            curl --fail-with-body --silent --show-error --max-time 130 \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              "$CITED_SITE_URL/api/worker"
+          done
