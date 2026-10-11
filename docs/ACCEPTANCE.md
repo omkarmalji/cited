@@ -6,19 +6,30 @@ Evidence collected on 2026-10-12, Node.js 22.16 and installed Chrome. Production
 | --- | --- |
 | Exact ThreeUI source | All 16 registered SHA-256 hashes match revision `fa86582fc870`; canvas rendered in Chrome |
 | Production build | Next.js 16.4.0 compilation and TypeScript passed |
-| Scoring, fact locks and PostgreSQL invariants | 13 unit/database tests passed, including exclusive leases, stale-token rejection, owner transfer, quotas, completed counts, citations and weekly idempotency |
-| Desktop and mobile flows | All 8 test cases passed against the public production origin: 6 initial cases plus 2 cross-session cases after correcting their hardcoded localhost URL |
-| Accessibility | Production landing and sample report Lighthouse accessibility 100; production axe found no violations in landing and zero-result report. Lighthouse also identified a non-scoring citation name mismatch, corrected to include visible text in the accessible name |
+| Scoring, fact locks, PostgreSQL and public-page invariants | 16 tests passed: scoring, fact locks, leases, owner transfer, quotas, completed counts, citations, weekly idempotency, server-rendered JSON-LD, script escaping, approval gate and fictional-page noindex/schema omission |
+| Desktop and mobile flows | All 8 Playwright cases passed together against the latest public production release |
+| Accessibility | Production landing and sample report Lighthouse accessibility 100; production axe found no violations in landing and zero-result report. Citation accessible names corrected; fresh report Lighthouse has no failed audits |
 | Provider inference | Nano, Super, Ultra all returned validated JSON through Token Factory |
 | Web retrieval | Tavily Search and Extract returned 5 fetched sources |
 | Saved examples | 4 fictional businesses across US, UK, Australia, Canada; provider-free sample flow verified |
 | Deployment | Vercel production deployment READY; anonymous landing, design page and sample-report route returned HTTP 200 |
 | Supabase | Dedicated Cited schema applied; all 10 tables RLS enabled; 4 examples seeded. Live constraints rejected empty/missing citations; anonymous records and privileged quota RPC denied |
+| Review QR and schema approval | Production API checks on an isolated fictional fixture: QR unavailable before approval, valid PNG after approval, outsider denied; changed schema facts rejected, restored schema approved, approved edits locked. The QA fixture alone received a confirmed authored demo URL; ordinary examples do not invent review links |
 
-Three real provider checks completed in the local persistence mode after retrying unfinished workers. London coffee: 10 of 40 mentions, 59 fetched sources; Rotterdam barbershop: 0 of 40, 72 sources; New York bicycle shop: 10 of 40, 77 sources. Each stored eight questions, five answers per question, cited findings and four unapproved fixes. These establish provider pipeline success; they do not establish deployed HTTP success. A separate production HTTP acceptance run is in progress.
+Three real provider checks completed in local persistence after retrying unfinished workers. A separate production HTTP run then completed all three with no retries, using deployed Nebius/Tavily calls and Supabase persistence:
+
+| Business/city | Mentions | Fetched sources | Supported findings | Verified unapproved drafts |
+| --- | --- | --- | --- | --- |
+| Monmouth Coffee Company, London | 11 of 40 | 39 | 0 | 4 |
+| Schorem Haarsnijder en Barbier, Rotterdam | 0 of 40 | 32 | 5 | 4 |
+| Bicycle Habitat, New York | 9 of 40 | 39 | 1 | 4 |
+
+Each stored eight questions with five nonempty, model-attributed answers. Every displayed finding references existing fetched sources. London had no finding surviving independent evidence verification; the report does not fabricate one. Results differ between checks, as expected. No real-business fixes were approved or published by the acceptance script.
+
+The deployed GitHub scheduler invocation [38171698744](https://github.com/omkarmalji/cited/actions/runs/38171698744) succeeded with three authenticated worker requests returning `processed: 3`. The unauthenticated worker returned 401. The workflow runs every fifteen minutes. Weekly due-date and idempotency semantics are verified separately by PostgreSQL tests; this invocation advanced the active queue rather than claiming a week-long observation.
 
 Browser coverage includes source-backed reports, 40 saved answers, unconfirmed hours rejected at approval, restored draft approved, published sample page, zero mentions, manual trend, reduced motion, keyboard skip link, and cross-session access denial.
 
 The refreshed narrated demo is exported as H264/AAC, 1440 by 900, 177.44 seconds. Its fictional example flow includes source evidence, rejected unsupported hours, explicit approval and the public sample page. Public YouTube publication is pending.
 
-Remaining: production real-provider acceptance, activated/verified GitHub scheduler, custom SMTP and magic-link delivery, public YouTube upload, hackathon feedback submission. The real acceptance script never approves or publishes businesses' fixes. This file records observed results, not inferred completion.
+Remaining: custom SMTP and magic-link delivery, hackathon feedback submission. Public YouTube publishing is explicitly on hold at the owner's request; no video file has been uploaded. The submission copy and feedback draft are in [SUBMISSION.md](SUBMISSION.md). This file records observed results, not inferred completion.

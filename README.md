@@ -6,7 +6,7 @@ Cited gives local small businesses an honest visibility check: eight customer qu
 
 Live demo: [cited-lemon.vercel.app](https://cited-lemon.vercel.app). Four fictional examples work without signup or provider keys. Live checks use Nebius Token Factory, Tavily and a dedicated Supabase database.
 
-Video: refreshed narrated demo exported locally at 2:57; public YouTube upload pending. Script: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
+Video: refreshed narrated demo exported locally at 2:57; public YouTube publishing is on hold at the owner's request. Script: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
 
 ## Run locally
 
