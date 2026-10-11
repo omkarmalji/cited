@@ -5,25 +5,27 @@ export default function Design() {
   return (
     <main id="main" className="app-container">
       <Wordmark />
-      <h1>Black velvet. One violet.</h1>
+      <h1>Less noise. More clarity.</h1>
       <p>
-        Cited design system. Pure black canvas, hairline borders, ghost
-        controls, readable receipts.
+        Cited design system. Inter headings and body, warm violet surfaces,
+        clear actions, readable evidence.
       </p>
       <section className="panel">
         <h2>Color tokens.</h2>
         <div className="swatches">
           {[
-            ["Void black", "#000000"],
-            ["Graphite hairline", "#292d30"],
+            ["Canvas", "#111015"],
+            ["Surface", "#191621"],
+            ["Accent surface", "#251d35"],
+            ["Hairline", "#37313f"],
             ["Surface lift", "#0b0e14"],
             ["White", "#ffffff"],
             ["Bone white", "#f0f0f0"],
-            ["Ash gray", "#a1a4a5"],
-            ["Smoke gray", "#abafb4"],
+            ["Muted text", "#b8b1c3"],
+            ["Secondary text", "#c8c0d5"],
             ["Iron", "#6e727a"],
             ["Charcoal", "#464a4d"],
-            ["Iris violet", "#9281f7"],
+            ["Iris violet", "#b7a0ff"],
             ["Iris glow", "#baa7ff"],
             ["Signal blue", "#3b9eff"],
             ["Sky blue", "#70b8ff"],
@@ -88,7 +90,7 @@ export default function Design() {
         <h2>Controls.</h2>
         <div className="action-row">
           <button className="button">Ghost button</button>
-          <button className="button strong">Strong button</button>
+          <button className="button strong">Primary button</button>
           <button className="button" disabled>
             Disabled
           </button>

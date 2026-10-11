@@ -2,6 +2,9 @@
   "name": "cited",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev --webpack --hostname 0.0.0.0",
     "build": "next build",
@@ -31,13 +34,13 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
+    "@electric-sql/pglite": "^0.5.8",
     "@playwright/test": "^1.56.0",
     "@types/node": "^22.0.0",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "esbuild": "^0.28.2",
-    "lighthouse": "^12.6.1",
     "prettier": "^3.9.10",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",

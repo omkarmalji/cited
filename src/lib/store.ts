@@ -65,14 +65,12 @@ export async function getRecord<T extends RecordValue>(
 export async function saveRecord(kind: string, record: RecordValue) {
   const db = database();
   if (db) {
-    const { error } = await db
-      .from("records")
-      .upsert({
-        kind,
-        id: record.id,
-        data: record,
-        updated_at: new Date().toISOString(),
-      });
+    const { error } = await db.from("records").upsert({
+      kind,
+      id: record.id,
+      data: record,
+      updated_at: new Date().toISOString(),
+    });
     if (error) throw error;
     return;
   }
@@ -85,7 +83,7 @@ export async function saveRecord(kind: string, record: RecordValue) {
 }
 export async function takeLease(id: string) {
   const token = randomUUID(),
-    until = new Date(Date.now() + 180000).toISOString(),
+    until = new Date(Date.now() + 360000).toISOString(),
     db = database();
   if (db) {
     const { data, error } = await db.rpc("claim_check", {
@@ -127,6 +125,7 @@ export async function finishLease(check: Check, token: string) {
   return local(async () => {
     const current = await getRecord<Check>("checks", check.id);
     if (current?.leaseToken !== token) throw new Error("Check lease expired.");
+    check.owner = current.owner;
     await saveRecord("checks", check);
   });
 }
@@ -234,4 +233,31 @@ export async function updateCheck(
     if (result.data) return check;
   }
   throw new Error("Another update is in progress. Please try again.");
+}
+export async function scheduleRecheck(previous: Check, next: Check) {
+  const db = database();
+  if (db) {
+    const { data, error } = await db.rpc("schedule_recheck", {
+      check_id: previous.id,
+      expected_due: previous.nextRecheckAt,
+      next_payload: next,
+    });
+    if (error) throw error;
+    return !!data;
+  }
+  return local(async () => {
+    const current = await getRecord<Check>("checks", previous.id);
+    if (
+      !current?.weeklyEnabled ||
+      current.nextRecheckAt !== previous.nextRecheckAt ||
+      Date.parse(current.nextRecheckAt!) > Date.now()
+    )
+      return false;
+    if (!(await getRecord<Check>("checks", next.id)))
+      await saveRecord("checks", { ...next, owner: current.owner });
+    current.weeklyEnabled = false;
+    current.latestRecheckId = next.id;
+    await saveRecord("checks", current);
+    return true;
+  });
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, Playfair_Display } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import "../generated/threeui.css";
 import { Nav } from "@/components/nav";
@@ -14,12 +14,6 @@ const mono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   weight: ["400", "500"],
-  display: "swap",
-});
-const display = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-display",
-  weight: "400",
   display: "swap",
 });
 export const metadata: Metadata = {
@@ -42,7 +36,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${inter.variable} ${mono.variable} ${display.variable}`}
+      className={`${inter.variable} ${mono.variable}`}
     >
       <body>
         <a className="skip-link" href="#main">

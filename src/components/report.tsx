@@ -10,11 +10,12 @@ import {
   ArrowClockwise,
 } from "@phosphor-icons/react";
 import { Badge, Citation, Dots } from "./ui";
-import { METHOD, type Check } from "@/lib/types";
+import { type Check } from "@/lib/types";
 export function Report({ id }: { id: string }) {
   const [check, setCheck] = useState<Check | null>(null),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [retryVersion, setRetryVersion] = useState(0);
   const router = useRouter();
   useEffect(() => {
     let stopped = false;
@@ -51,7 +52,7 @@ export function Report({ id }: { id: string }) {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [id]);
+  }, [id, retryVersion]);
   const recheck = async () => {
     setBusy(true);
     setError("");
@@ -81,9 +82,9 @@ export function Report({ id }: { id: string }) {
   const complete = check.status === "complete";
   const progress = ["questions", "runs"].includes(check.status)
     ? 1
-    : check.status === "diagnosis"
+    : ["diagnosis", "verifyDiagnosis"].includes(check.status)
       ? 2
-      : check.status === "fixes"
+      : ["fixes", "verifyFixes"].includes(check.status)
         ? 3
         : 0;
   return (
@@ -103,8 +104,7 @@ export function Report({ id }: { id: string }) {
       </p>
       {check.sample && (
         <p className="notice sample">
-          Fictional business. Saved sample results. Approval demonstrates the
-          flow; sample pages remain labeled.
+          Fictional business. Saved results. Approved pages stay labeled.
         </p>
       )}
       {error && (
@@ -120,6 +120,30 @@ export function Report({ id }: { id: string }) {
             Partial answers are not a complete score. No unsupported findings or
             fixes have been published.
           </p>
+          {check.retryStage && (check.retryCount || 0) < 3 && (
+            <button
+              className="button strong"
+              style={{ marginRight: 12 }}
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setError("");
+                try {
+                  const response = await fetch(`/api/checks/${id}/retry`, {
+                      method: "POST",
+                    }),
+                    data = await response.json();
+                  if (!response.ok) throw new Error(data.error);
+                  setRetryVersion((v) => v + 1);
+                } catch (e) {
+                  setError((e as Error).message);
+                }
+                setBusy(false);
+              }}
+            >
+              {busy ? "Retrying..." : "Retry unfinished step"}
+            </button>
+          )}
           <a className="button" href="/#check">
             Start another check
           </a>
@@ -200,35 +224,37 @@ export function Report({ id }: { id: string }) {
               Outlook labels are heuristics, not guarantees. A niche question
               can be worth improving even with zero mentions.
             </p>
-            {check.questions.map((q) => (
-              <article key={q.id} className="question-row">
-                <h3>{q.text}</h3>
-                <div className="question-data">
-                  <Dots count={q.runs.filter((r) => r.mentioned).length} />
-                  <Badge label={q.status} />
-                </div>
-                <details>
-                  <summary>Read all five answers</summary>
-                  {q.runs.map((r) => (
-                    <div className="run-answer" key={r.index}>
-                      <span className="mono">
-                        Run {r.index + 1} ·{" "}
-                        {r.mentioned ? "Named" : "Not named"}
-                      </span>
-                      <p>{r.answer}</p>
-                      <div className="citation-list">
-                        {(r.citationIds || [])
-                          .map((id) => check.sources.find((s) => s.id === id))
-                          .filter(Boolean)
-                          .map((s) => (
-                            <Citation key={s!.id} source={s!} />
-                          ))}
+            <div className="question-list">
+              {check.questions.map((q) => (
+                <article key={q.id} className="question-row">
+                  <h3>{q.text}</h3>
+                  <div className="question-data">
+                    <Dots count={q.runs.filter((r) => r.mentioned).length} />
+                    <Badge label={q.status} />
+                  </div>
+                  <details>
+                    <summary>View 5 answers</summary>
+                    {q.runs.map((r) => (
+                      <div className="run-answer" key={r.index}>
+                        <span className="mono">
+                          Run {r.index + 1} ·{" "}
+                          {r.mentioned ? "Named" : "Not named"}
+                        </span>
+                        <p>{r.answer}</p>
+                        <div className="citation-list">
+                          {(r.citationIds || [])
+                            .map((id) => check.sources.find((s) => s.id === id))
+                            .filter(Boolean)
+                            .map((s) => (
+                              <Citation key={s!.id} source={s!} />
+                            ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </details>
-              </article>
-            ))}
+                    ))}
+                  </details>
+                </article>
+              ))}
+            </div>
           </section>
           <section className="report-section panel">
             <h2>
@@ -277,35 +303,36 @@ export function Report({ id }: { id: string }) {
             <div className="fix-list">
               {check.fixes.map((f) => (
                 <article className="panel fix-item" key={f.id}>
-                  <Badge
-                    label={
-                      f.status === "approved"
-                        ? "Approved"
-                        : f.status === "edited"
-                          ? "Edited"
-                          : "Draft"
-                    }
-                  />
-                  <h3>{f.title}</h3>
-                  <p>
-                    {f.type === "page"
-                      ? "A hosted page built from your confirmed facts."
-                      : f.type === "profile"
-                        ? "A description, three posts, five Q&A pairs."
-                        : f.type === "reviews"
-                          ? "SMS, WhatsApp, email and your printable QR card."
-                          : "Structured business data for your website."}
-                  </p>
-                  {f.flags.length > 0 && (
-                    <p className="error-message">
-                      Needs a fact check before approval.
+                  <div className="fix-copy">
+                    <div className="fix-title">
+                      <h3>{f.title}</h3>
+                      <Badge
+                        label={
+                          f.status === "approved"
+                            ? "Approved"
+                            : f.status === "edited"
+                              ? "Edited"
+                              : "Draft"
+                        }
+                      />
+                    </div>
+                    <p>
+                      {f.type === "page"
+                        ? "A hosted page built from your confirmed facts."
+                        : f.type === "profile"
+                          ? "A description, three posts, five Q&A pairs."
+                          : f.type === "reviews"
+                            ? "SMS, WhatsApp, email and your printable QR card."
+                            : "Structured business data for your website."}
                     </p>
-                  )}
+                    {f.flags.length > 0 && (
+                      <p className="error-message">
+                        Needs a fact check before approval.
+                      </p>
+                    )}
+                  </div>
                   <div className="action-row">
-                    <Link
-                      className="button strong"
-                      href={`/fix/${f.id}?check=${id}`}
-                    >
+                    <Link className="button" href={`/fix/${f.id}?check=${id}`}>
                       {f.status === "approved"
                         ? "View approved fix"
                         : "Edit and approve"}{" "}
@@ -323,7 +350,6 @@ export function Report({ id }: { id: string }) {
           </section>
           <WeeklyRechecks check={check} />
           <SaveReport checkId={id} />
-          <p className="notice mono">{METHOD}</p>
         </>
       )}
     </main>
@@ -334,51 +360,56 @@ function SaveReport({ checkId }: { checkId: string }) {
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false);
   return (
-    <section className="report-section panel">
-      <h2>Keep your report.</h2>
-      <p style={{ fontSize: 14, marginBottom: 20 }}>
-        Optional magic-link login. Your first check never needs an account.
-      </p>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setBusy(true);
-          setMessage("");
-          try {
-            const r = await fetch("/api/auth", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email, checkId }),
-            });
-            const d = await r.json();
-            setMessage(d.message || d.error);
-          } catch {
-            setMessage("Could not send login link. Please try again.");
-          }
-          setBusy(false);
-        }}
-      >
-        <label htmlFor="save-email">Email address</label>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <input
-            style={{ flex: "1 1 240px" }}
-            id="save-email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-          />
-          <button className="button" disabled={busy}>
-            {busy ? "Sending..." : "Send login link"}
-          </button>
-        </div>
-        {message && (
-          <p className="notice" role="status">
-            {message}
-          </p>
-        )}
-      </form>
+    <section className="report-section">
+      <details className="panel report-option">
+        <summary>
+          <h2>Keep your report.</h2>
+          <span>Optional</span>
+        </summary>
+        <p style={{ fontSize: 14, marginBottom: 20 }}>
+          Optional magic-link login. Your first check never needs an account.
+        </p>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setBusy(true);
+            setMessage("");
+            try {
+              const r = await fetch("/api/auth", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, checkId }),
+              });
+              const d = await r.json();
+              setMessage(d.message || d.error);
+            } catch {
+              setMessage("Could not send login link. Please try again.");
+            }
+            setBusy(false);
+          }}
+        >
+          <label htmlFor="save-email">Email address</label>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <input
+              style={{ flex: "1 1 240px" }}
+              id="save-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+            />
+            <button className="button" disabled={busy}>
+              {busy ? "Sending..." : "Send login link"}
+            </button>
+          </div>
+          {message && (
+            <p className="notice" role="status">
+              {message}
+            </p>
+          )}
+        </form>
+      </details>
     </section>
   );
 }

@@ -12,23 +12,23 @@ The authenticated `/v1/models` response returned HTTP 200 with these exact case-
 | -------- | --------------------------------------- | -------------------------------------------- |
 | Fast     | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | 40 independent recommendations per check     |
 | Reasoner | `nvidia/nemotron-3-super-120b-a12b`     | Resolve identity, questions, cited diagnosis |
-| Writer   | `nvidia/Nemotron-3-Ultra-550b-a55b`     | Fix priorities and fact verification         |
+| Writer   | `nvidia/Nemotron-3-Ultra-550b-a55b`     | Fix drafting and independent fact verification |
 
 The same catalog also offers `nvidia/Nemotron-3_5-Lightning`. Models are environment variables so availability can change without editing the application. An authenticated catalog listing establishes availability, not inference success. Run `npm run smoke:integrations` to verify actual inference for all roles.
 
-[Structured JSON documentation](https://docs.tokenfactory.nebius.com/ai-models-inference/json) supports `response_format`. All outputs are parsed with Zod and retried once if invalid. Network calls have a 60-second timeout and two transport retries. Logs include role, exact model ID, and token usage, never keys or prompts.
+[Structured JSON documentation](https://docs.tokenfactory.nebius.com/ai-models-inference/json) supports `response_format`. Outputs use JSON-object mode, an explicit schema in the prompt and Zod validation; invalid outputs retry once. Network calls have a 60-second timeout and one transport retry. Fast calls have a 6,000-token completion budget; Reasoner and Writer calls have 10,000 to accommodate reasoning before structured output. Logs include role, exact model ID, token usage and finish reason, never keys or prompts.
 
 ## Tavily
 
 Official [Search](https://docs.tavily.com/documentation/api-reference/endpoint/search) and [Extract](https://docs.tavily.com/documentation/api-reference/endpoint/extract) documentation specifies the `@tavily/core` SDK and Bearer-key API. `search()` runs advanced search then extracts the top three URLs on each question’s first run. Fetched excerpts and timestamps are saved; subsequent five runs use that evidence. Search and extraction happen in the main live path.
 
-No Tavily key was present at initial setup. Live results must not be replaced with saved samples on failure.
+Actual Search and Extract calls passed, including the main-flow real business acceptance checks. Live results must not be replaced with saved samples on failure.
 
 ## Supabase
 
-Apply `supabase/migrations/001_cited.sql` to a new Cited project. Use `NEXT_PUBLIC_SUPABASE_URL`, public anon key for Auth, and server-only service-role key for storage. The service-role key is never exposed to client code. RLS denies direct browser access to report tables; route handlers enforce owner session identity.
+The migration `supabase/migrations/001_cited.sql` is applied to Cited's dedicated project. Use `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for Auth (legacy anon key supported), and the server-only service-role key for storage. The service-role key is never exposed to client code. All ten tables have RLS; route handlers enforce owner session identity. Live database checks rejected empty citations and citations without stored sources, and denied anonymous table/RPC access.
 
-Magic-link login uses [Supabase SSR](https://supabase.com/docs/guides/auth/server-side/nextjs) and [passwordless email](https://supabase.com/docs/guides/auth/auth-email-passwordless), with PKCE callback at `/auth/callback`. Add localhost and deployed callback origins to allowed redirect URLs. Configure email delivery for judge access. This remains externally unverified until a Supabase project is configured.
+Magic-link login uses [Supabase SSR](https://supabase.com/docs/guides/auth/server-side/nextjs) and [passwordless email](https://supabase.com/docs/guides/auth/auth-email-passwordless), with PKCE callback at `/auth/callback`. The production Site URL and localhost/production callback allowlist are configured. Email delivery remains unverified pending custom SMTP: Authentication, Emails, SMTP Settings. Supabase's [default SMTP restrictions](https://supabase.com/docs/guides/auth/auth-smtp) prevent arbitrary judge emails until a custom sender is configured. This does not block anonymous checks or fictional examples.
 
 ## ThreeUI source provenance
 

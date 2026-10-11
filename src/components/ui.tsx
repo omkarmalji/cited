@@ -54,7 +54,7 @@ export function Citation({ source }: { source: Source }) {
       target="_blank"
       rel="noopener noreferrer"
       className="citation"
-      aria-label={`Source ${source.id}: ${source.title}`}
+      aria-label={`[${source.id}] ${source.domain}. Source ${source.id}: ${source.title}`}
     >
       [{source.id}] {source.domain}
     </a>

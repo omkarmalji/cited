@@ -10,7 +10,7 @@ import { sampleCheck, examples } from "@/lib/examples";
 import { work, total } from "@/lib/pipeline";
 import type { Candidate, Check, Fix } from "@/lib/types";
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 300;
 const json = (data: unknown, status = 200) =>
   NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
 async function ownedCheck(id: string, identity: string) {
@@ -198,6 +198,9 @@ async function handler(
           ...safe
         } = check;
         return json(safe);
+      }
+      if(req.method==='POST'&&action==='retry'){
+        const updated=await updateCheck(id,identity,c=>{if(c.status!=='error'||!c.retryStage||(c.retryCount||0)>=3)throw new Error('This check cannot be retried again. Start a new check.');c.retryCount=(c.retryCount||0)+1;c.status=c.retryStage;c.progress='Retrying the unfinished step';delete c.error;delete c.leaseToken;delete c.leaseUntil;});return json({id:updated.id});
       }
       if (req.method === "POST" && action === "weekly") {
         if (check.sample || check.status !== "complete")

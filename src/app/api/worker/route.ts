@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { processQueue } from "@/lib/weekly";
-export const maxDuration = 120;
+export const maxDuration = 300;
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET,
     provided = req.headers.get("authorization");

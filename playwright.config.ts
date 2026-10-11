@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+const testURL = process.env.CITED_TEST_URL;
 export default defineConfig({
   testDir: "tests/e2e",
   timeout: 90000,
@@ -6,7 +7,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: testURL || "http://localhost:3000",
     trace: "retain-on-failure",
     channel: "chrome",
   },
@@ -17,10 +18,12 @@ export default defineConfig({
       use: { ...devices["iPhone 13"], defaultBrowserType: "chromium" },
     },
   ],
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: true,
-    timeout: 120000,
-  },
+  webServer: testURL
+    ? undefined
+    : {
+        command: "npm run dev",
+        url: "http://localhost:3000",
+        reuseExistingServer: true,
+        timeout: 120000,
+      },
 });

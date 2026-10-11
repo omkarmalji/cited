@@ -90,16 +90,22 @@ test("zero mentions still useful; keyboard navigation and reduced motion", async
 test("session cannot read another session report", async ({
   page,
   browser,
+  baseURL,
 }) => {
   await page.goto("/examples/atelier-moss");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Atelier Moss",
   );
   const id = new URL(page.url()).pathname.split("/").pop();
-  const other = await browser.newContext();
-  const response = await other.request.get(
-    `http://localhost:3000/api/checks/${id}`,
-  );
-  expect(response.ok()).toBe(false);
-  await other.close();
+  const other = await browser.newContext({ baseURL });
+  try {
+    const response = await other.request.get(`/api/checks/${id}`);
+    expect(response.status()).toBe(400);
+    const payload = await response.json();
+    expect(payload.error).toBe("Report not found in this browser session.");
+    expect(payload).not.toHaveProperty("facts");
+    expect(payload).not.toHaveProperty("questions");
+  } finally {
+    await other.close();
+  }
 });

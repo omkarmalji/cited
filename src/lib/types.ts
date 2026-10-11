@@ -27,6 +27,7 @@ export type Run = {
   answer: string;
   model: string;
   citationIds?: number[];
+  recommendations?: string[];
 };
 export type Question = {
   id: string;
@@ -62,7 +63,9 @@ export type Check = {
     | "questions"
     | "runs"
     | "diagnosis"
+    | "verifyDiagnosis"
     | "fixes"
+    | "verifyFixes"
     | "complete"
     | "error";
   progress: string;
@@ -78,6 +81,14 @@ export type Check = {
   weeklyEnabled?: boolean;
   nextRecheckAt?: string;
   latestRecheckId?: string;
+  retryStage?:
+    | "questions"
+    | "runs"
+    | "diagnosis"
+    | "verifyDiagnosis"
+    | "fixes"
+    | "verifyFixes";
+  retryCount?: number;
 };
 export type Candidate = {
   id: string;

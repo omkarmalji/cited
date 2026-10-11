@@ -7,7 +7,7 @@ create table public.businesses(id text primary key,name text not null,city text 
 create table public.checks(id text primary key,business_id text references public.businesses(id),created_at timestamptz not null,status text not null,summary jsonb not null);
 create table public.questions(id text primary key,check_id text references public.checks(id) on delete cascade,text text not null,kind text not null,status_label text not null);
 create table public.runs(question_id text references public.questions(id) on delete cascade,run_index int check(run_index between 0 and 4),mentioned boolean not null,answer text not null,model text not null,primary key(question_id,run_index));
-create table public.sources(id int not null,check_id text references public.checks(id) on delete cascade,url text not null check(url ~ '^https?://'),title text not null,domain text not null,fetched_at timestamptz not null,excerpt text not null,primary key(check_id,id));
+create table public.sources(id int not null,check_id text references public.checks(id) on delete cascade,url text not null check(url ~ '^https?://'),title text not null,domain text not null,fetched_at timestamptz not null,excerpt text not null check(length(excerpt)>0),primary key(check_id,id));
 create table public.findings(id bigint generated always as identity primary key,check_id text references public.checks(id) on delete cascade,kind text not null,body text not null,citation_ids int[] not null check(cardinality(citation_ids)>0));
 create table public.fixes(id text primary key,check_id text references public.checks(id) on delete cascade,type text not null,title text not null,body text not null,status text not null check(status in ('draft','edited','approved')),approved_at timestamptz,slug text,check((status='approved')=(approved_at is not null)));
 create table public.examples(id text primary key,business_id text references public.businesses(id),check_id text references public.checks(id),label text not null);
@@ -20,7 +20,10 @@ create trigger finding_sources before insert or update on public.findings for ea
 create function public.sync_check() returns trigger language plpgsql set search_path=public as $$
 declare c jsonb;b jsonb;q jsonb;r jsonb;s jsonb;f jsonb;begin
   if new.kind not in ('checks','examples') then return new;end if;c=new.data;b=c->'facts';
-  if c->>'status'='complete' and (jsonb_array_length(c->'questions')<>8 or exists(select 1 from jsonb_array_elements(c->'questions') x where jsonb_array_length(x->'runs')<>5)) then raise exception 'Complete reports require 8 questions and 5 runs each';end if;
+  if c->>'status'='complete' then
+    if coalesce(jsonb_typeof(c->'questions'),'null')<>'array' then raise exception 'Complete reports require 8 questions and 5 runs each';end if;
+    if jsonb_array_length(c->'questions')<>8 or exists(select 1 from jsonb_array_elements(c->'questions') x where coalesce(jsonb_typeof(x->'runs'),'null')<>'array' or jsonb_array_length(x->'runs')<>5) then raise exception 'Complete reports require 8 questions and 5 runs each';end if;
+  end if;
   insert into businesses values(c->>'businessId',b->>'name',b->>'city',b->>'country',b->>'category',b->>'website',b,(c->>'confirmedAt')::timestamptz) on conflict(id) do update set facts=excluded.facts,confirmed_at=excluded.confirmed_at;
   insert into checks values(c->>'id',c->>'businessId',(c->>'createdAt')::timestamptz,c->>'status',jsonb_build_object('sample',c->'sample','progress',c->'progress','previousTotal',c->'previousTotal')) on conflict(id) do update set status=excluded.status,summary=excluded.summary;
   delete from findings where check_id=c->>'id';delete from sources where check_id=c->>'id';delete from questions where check_id=c->>'id';delete from fixes where check_id=c->>'id';
@@ -47,3 +50,12 @@ create function public.replace_check(check_id text,expected_updated_at timestamp
 update records set data=payload,updated_at=now() where kind='checks' and id=check_id and updated_at=expected_updated_at;return found;end $$;
 revoke all on function public.replace_check(text,timestamptz,jsonb) from public,anon,authenticated;
 grant execute on function public.replace_check(text,timestamptz,jsonb) to service_role;
+create function public.schedule_recheck(check_id text,expected_due text,next_payload jsonb) returns boolean language plpgsql security definer set search_path=public as $$
+declare current_payload jsonb;begin
+select data into current_payload from records where kind='checks' and id=check_id for update;
+if current_payload is null or current_payload->>'status'<>'complete' or coalesce((current_payload->>'weeklyEnabled')::boolean,false)=false or current_payload->>'nextRecheckAt' is distinct from expected_due or expected_due::timestamptz>now() then return false;end if;
+next_payload=next_payload||jsonb_build_object('owner',current_payload->>'owner');
+insert into records(kind,id,data) values('checks',next_payload->>'id',next_payload) on conflict(kind,id) do nothing;
+update records set data=current_payload||jsonb_build_object('weeklyEnabled',false,'latestRecheckId',next_payload->>'id'),updated_at=now() where kind='checks' and id=check_id;return true;end $$;
+revoke all on function public.schedule_recheck(text,text,jsonb) from public,anon,authenticated;
+grant execute on function public.schedule_recheck(text,text,jsonb) to service_role;

@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
           );
         return NextResponse.redirect(
           new URL(
-            check && /^[a-f0-9-]{36}$/.test(check)
+            check && /^[\w-]{1,120}$/.test(check)
               ? `/check/${check}`
               : "/account",
             siteOrigin(),

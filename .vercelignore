@@ -1,0 +1,9 @@
+.git/
+.data/
+.env*
+!.env.example
+artifacts/
+test-results/
+playwright-report/
+*.tsbuildinfo
+CONTEXT.md

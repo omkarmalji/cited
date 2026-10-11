@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { List, X, ArrowUpRight } from "@phosphor-icons/react";
+import { List, X } from "@phosphor-icons/react";
 import { Wordmark } from "./ui";
 export function Nav() {
   const [open, setOpen] = useState(false);
@@ -19,16 +19,10 @@ export function Nav() {
           <Link href="/#fix-pack" onClick={() => setOpen(false)}>
             The fix pack
           </Link>
-          <Link href="/#pricing" onClick={() => setOpen(false)}>
-            Pricing
-          </Link>
           <Link href="/#examples" onClick={() => setOpen(false)}>
             Try an example
           </Link>
         </nav>
-        <Link href="/#check" className="button nav-cta">
-          Check your business <ArrowUpRight size={16} />
-        </Link>
         <button
           className="menu-button"
           onClick={() => setOpen(!open)}

@@ -10,7 +10,7 @@ concurrency:
 jobs:
   worker:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 16
     steps:
       - name: Advance durable queue
         env:
@@ -20,7 +20,7 @@ jobs:
           test -n "$CITED_SITE_URL"
           test -n "$CRON_SECRET"
           for attempt in 1 2 3; do
-            curl --fail-with-body --silent --show-error --max-time 130 \
+            curl --fail-with-body --silent --show-error --max-time 310 \
               -H "Authorization: Bearer $CRON_SECRET" \
               "$CITED_SITE_URL/api/worker"
           done

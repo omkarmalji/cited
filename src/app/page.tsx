@@ -51,29 +51,27 @@ export default function Home() {
   return (
     <Motion>
       <main id="main">
-        <section className="hero container">
-          <div className="hero-copy">
-            <a href="#honesty" className="announcement" data-enter>
-              AI visibility for local businesses <ArrowRight size={14} />
-            </a>
-            <h1 data-enter>
-              Customers ask AI
-              {" "}
-              <br />
-              who to visit.
-              {" "}
-              <br />
-              <span>Does it say you?</span>
-            </h1>
-            <p className="hero-description" data-enter>
-              See when AI recommends your business.
-              <br />
-              Understand why. Know what to fix.
-            </p>
-          </div>
+        <section className="hero">
           <HeroScene />
-          <div className="hero-form" data-enter>
-            <CheckForm />
+          <div className="container hero-content">
+            <div className="hero-copy">
+              <a href="#honesty" className="announcement" data-enter>
+                AI visibility for local businesses <ArrowRight size={14} />
+              </a>
+              <h1 data-enter>
+                Customers ask AI <br />
+                who to visit. <br />
+                <span>Does it say you?</span>
+              </h1>
+              <p className="hero-description" data-enter>
+                See when AI recommends your business.
+                <br />
+                Understand why. Know what to fix.
+              </p>
+            </div>
+            <div className="hero-form" data-enter>
+              <CheckForm />
+            </div>
           </div>
         </section>
         <section
@@ -207,52 +205,11 @@ export default function Home() {
             <p>Your fix pack turns a report into something you can use.</p>
           </div>
           <div className="fix-grid">
-            {fixes.map((f, i) => (
-              <article className={`fix-feature fix-feature-${i}`} key={f.title}>
+            {fixes.map((f) => (
+              <article className="fix-feature" key={f.title}>
                 <f.icon size={28} weight="light" />
                 <h3>{f.title}</h3>
                 <p>{f.text}</p>
-                <div className="mini-art" aria-hidden="true">
-                  {i === 0 ? (
-                    <>
-                      <span className="mini-domain">brew-lane.cited.page</span>
-                      <div className="mini-page">
-                        <span>Brew Lane Cafe</span>
-                        <span>Quiet seating. Filter coffee.</span>
-                        <span>Portland, United States</span>
-                      </div>
-                    </>
-                  ) : i === 1 ? (
-                    <>
-                      <div className="mini-post">
-                        Description <span>Confirmed facts only</span>
-                      </div>
-                      <div className="mini-post">
-                        3 posts <span>Ready to review</span>
-                      </div>
-                      <div className="mini-post">
-                        5 Q&A pairs <span>Plain answers</span>
-                      </div>
-                    </>
-                  ) : i === 2 ? (
-                    <>
-                      <div className="review-message">
-                        Thank you for visiting.
-                        <br />
-                        Please leave an honest review.
-                      </div>
-                      <span className="mini-domain">
-                        SMS · WhatsApp · Email
-                      </span>
-                    </>
-                  ) : (
-                    <pre>
-                      {
-                        '{\n  "@type": "LocalBusiness",\n  "name": "Brew Lane Cafe",\n  "address": "Portland"\n}'
-                      }
-                    </pre>
-                  )}
-                </div>
                 <span className="feature-detail mono">{f.detail}</span>
               </article>
             ))}
@@ -331,9 +288,8 @@ export default function Home() {
               </div>
               <p>Build a habit of being found.</p>
               <ul>
-                <li>Everything in your free check</li>
                 <li>Weekly rechecks and trends</li>
-                <li>One hosted business page</li>
+                <li>Your hosted page and fix packs</li>
                 <li>Review requests and QR card</li>
               </ul>
               <span className="availability mono">
@@ -348,7 +304,6 @@ export default function Home() {
               <p>Clarity for your clients.</p>
               <ul>
                 <li>Planned multi-client workspace</li>
-                <li>Client switching</li>
                 <li>White-label reports</li>
                 <li>Shared approval workflows</li>
               </ul>

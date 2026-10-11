@@ -1,4 +1,4 @@
-import { listChecks, saveRecord } from "./store";
+import { listChecks, scheduleRecheck } from "./store";
 import { work, total } from "./pipeline";
 import type { Check } from "./types";
 export async function processQueue() {
@@ -42,10 +42,7 @@ export async function processQueue() {
       leaseUntil: undefined,
     };
     // One deterministic ID per predecessor and due date makes scheduler retries idempotent.
-    await saveRecord("checks", next);
-    check.weeklyEnabled = false;
-    check.latestRecheckId = next.id;
-    await saveRecord("checks", check);
+    await scheduleRecheck(check, next);
   }
   for (const c of (await listChecks())
     .filter((c) => !c.sample && !["complete", "error"].includes(c.status))
