@@ -13,6 +13,17 @@ export type Facts = {
   website: string;
   reviewUrl: string;
 };
+export const FACT_LABELS: Record<keyof Facts, string> = {
+  name: "Business name",
+  city: "City",
+  country: "Country",
+  category: "Category",
+  address: "Address",
+  hours: "Hours",
+  knownFor: "Known for",
+  website: "Website",
+  reviewUrl: "Review link",
+};
 export type Source = {
   id: number;
   url: string;

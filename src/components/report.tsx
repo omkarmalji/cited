@@ -9,8 +9,9 @@ import {
   CircleNotch,
   ArrowClockwise,
 } from "@phosphor-icons/react";
-import { Badge, Citation, Dots } from "./ui";
-import { type Check } from "@/lib/types";
+import { Badge, Citation, Dots, RunMatrix, outlookColor } from "./ui";
+import { METHOD, type Check } from "@/lib/types";
+import { named, outlookCounts, sortQuestions } from "@/lib/outlook";
 export function Report({ id }: { id: string }) {
   const [check, setCheck] = useState<Check | null>(null),
     [error, setError] = useState(""),
@@ -80,6 +81,10 @@ export function Report({ id }: { id: string }) {
     .flatMap((q) => q.runs)
     .filter((r) => r.mentioned).length;
   const complete = check.status === "complete";
+  const questions = sortQuestions(check.questions);
+  const best = questions.find((q) => q.status === "Winnable now");
+  const approved = check.fixes.filter((f) => f.status === "approved").length;
+  const rival = check.findings[0]?.rival;
   const progress = ["questions", "runs"].includes(check.status)
     ? 1
     : ["diagnosis", "verifyDiagnosis"].includes(check.status)
@@ -96,7 +101,7 @@ export function Report({ id }: { id: string }) {
         {check.sample && <Badge label="Sample data" />}
       </div>
       <h1>{check.facts.name}</h1>
-      <p>
+      <p className="report-meta">
         {check.facts.city}, {check.facts.country} ·{" "}
         {complete
           ? `${check.sample ? "Saved example" : "Checked " + new Date(check.createdAt).toLocaleDateString("en", { month: "short", day: "numeric" })}, 8 questions, 5 runs each`
@@ -196,14 +201,13 @@ export function Report({ id }: { id: string }) {
       ) : (
         <>
           <section className="panel summary-panel">
-            <div>
+            <div className="summary-score">
               <div className="fact-name">AI VISIBILITY</div>
               <div className="summary-count">
                 {count} <span>of 40 runs</span>
               </div>
               <p>
-                Your business was named in {count} answers across eight
-                questions.
+                Named in {count} of 40 answers across eight customer questions.
               </p>
               {check.previousTotal !== undefined && (
                 <p className="mono">
@@ -213,23 +217,56 @@ export function Report({ id }: { id: string }) {
                 </p>
               )}
             </div>
-            <button className="button" onClick={recheck} disabled={busy}>
-              <ArrowClockwise size={16} />
-              {busy ? "Starting..." : "Recheck now"}
-            </button>
+            <RunMatrix questions={questions} />
+            <div className="summary-side">
+              <ul className="outlook-list" aria-label="Questions by outlook">
+                {outlookCounts(questions).map((o) => (
+                  <li key={o.status} className={outlookColor(o.status)}>
+                    <i aria-hidden="true" />
+                    {o.count} {o.status.toLowerCase()}
+                  </li>
+                ))}
+              </ul>
+              <button className="button" onClick={recheck} disabled={busy}>
+                <ArrowClockwise size={16} />
+                {busy ? "Starting..." : "Recheck now"}
+              </button>
+            </div>
           </section>
-          <section className="report-section">
+          <div className="next-move">
+            <span className="fact-name">START HERE</span>
+            <p>
+              {best
+                ? `“${best.text}” is winnable now, named in ${named(best)} of 5 runs. Approve your fix pack to strengthen it.`
+                : "No question is winnable right away. Niche questions are your best path, so start with your fix pack."}
+            </p>
+            <a className="text-link" href="#fixes">
+              Go to your fix pack <ArrowRight size={16} />
+            </a>
+          </div>
+          <nav className="report-nav" aria-label="Report sections">
+            <a href="#questions">Questions</a>
+            <a href="#why">{rival ? `Why ${rival} wins` : "Sources"}</a>
+            <a href="#fixes">
+              Fix pack · {approved} of {check.fixes.length} approved
+            </a>
+          </nav>
+          <section id="questions" className="report-section">
             <h2>What your customers might ask.</h2>
-            <p style={{ marginBottom: 24, fontSize: 13 }}>
-              Outlook labels are heuristics, not guarantees. A niche question
-              can be worth improving even with zero mentions.
+            <p className="section-note">
+              Most winnable first. Outlook labels are heuristics, not
+              guarantees. A niche question can be worth improving even with zero
+              mentions.
             </p>
             <div className="question-list">
-              {check.questions.map((q) => (
+              {questions.map((q) => (
                 <article key={q.id} className="question-row">
-                  <h3>{q.text}</h3>
+                  <div>
+                    <span className="question-kind mono">{q.kind}</span>
+                    <h3>{q.text}</h3>
+                  </div>
                   <div className="question-data">
-                    <Dots count={q.runs.filter((r) => r.mentioned).length} />
+                    <Dots count={named(q)} />
                     <Badge label={q.status} />
                   </div>
                   <details>
@@ -256,7 +293,7 @@ export function Report({ id }: { id: string }) {
               ))}
             </div>
           </section>
-          <section className="report-section panel">
+          <section id="why" className="report-section panel">
             <h2>
               {check.findings[0]
                 ? `Why ${check.findings[0].rival} wins.`
@@ -295,10 +332,16 @@ export function Report({ id }: { id: string }) {
               ))}
             </details>
           </section>
-          <section className="report-section">
-            <h2>Your fix pack.</h2>
-            <p style={{ marginBottom: 24, fontSize: 14 }}>
-              Review your drafts. Approve each one before copying or publishing.
+          <section id="fixes" className="report-section">
+            <div className="section-title-row">
+              <h2>Your fix pack.</h2>
+              <span className="mono">
+                {approved} of {check.fixes.length} approved
+              </span>
+            </div>
+            <p className="section-note">
+              Drafts use only your confirmed facts. Approve each one before
+              copying or publishing.
             </p>
             <div className="fix-list">
               {check.fixes.map((f) => (
@@ -350,6 +393,7 @@ export function Report({ id }: { id: string }) {
           </section>
           <WeeklyRechecks check={check} />
           <SaveReport checkId={id} />
+          <p className="method-note mono">{METHOD}</p>
         </>
       )}
     </main>

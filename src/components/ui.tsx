@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Source, Status } from "@/lib/types";
+import type { Question, Source, Status } from "@/lib/types";
 export function Wordmark() {
   return (
     <Link href="/" className="wordmark" aria-label="Cited home">
@@ -18,17 +18,39 @@ export function Badge({
   label: Status | "Sample data" | "Approved" | "Draft" | "Edited";
 }) {
   const colors: Record<string, string> = {
-    "Winnable now": "green",
-    "In about 3 months": "amber",
-    Unlikely: "red",
-    "Needs your check": "blue",
     "Sample data": "amber",
     Approved: "green",
   };
   return (
-    <span className={`badge ${colors[label] || ""}`}>
+    <span className={`badge ${colors[label] || outlookColor(label)}`}>
       <i aria-hidden="true" />
       {label}
+    </span>
+  );
+}
+export const outlookColor = (label: string) =>
+  ({
+    "Winnable now": "green",
+    "In about 3 months": "amber",
+    Unlikely: "red",
+    "Needs your check": "blue",
+  })[label] || "";
+export function RunMatrix({ questions }: { questions: Question[] }) {
+  const runs = questions.flatMap((q) => q.runs);
+  const count = runs.filter((r) => r.mentioned).length;
+  return (
+    <span
+      className="run-matrix"
+      role="img"
+      aria-label={`Named in ${count} of ${runs.length} runs`}
+    >
+      {questions.map((q) => (
+        <span key={q.id}>
+          {q.runs.map((r) => (
+            <i key={r.index} className={r.mentioned ? "filled" : ""} />
+          ))}
+        </span>
+      ))}
     </span>
   );
 }
@@ -36,6 +58,7 @@ export function Dots({ count }: { count: number }) {
   return (
     <span
       className="run-score"
+      role="img"
       aria-label={`Recommended in ${count} of 5 runs`}
     >
       <span className="run-dots" aria-hidden="true">

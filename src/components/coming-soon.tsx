@@ -9,9 +9,10 @@ export function ComingSoon({ plan }: { plan: "Owner" | "Agency" }) {
       <button
         className="button"
         type="button"
+        aria-label={`Learn more about the ${plan} plan`}
         onClick={() => dialog.current?.showModal()}
       >
-        Join waitlist <ArrowRight size={16} />
+        Learn more <ArrowRight size={16} />
       </button>
       <dialog
         className="coming-soon-dialog"

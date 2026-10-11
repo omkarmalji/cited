@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "@phosphor-icons/react/dist/ssr";
 import { Wordmark } from "./ui";
+import { METHOD } from "@/lib/types";
 
 export function Footer() {
   return (
@@ -19,7 +20,14 @@ export function Footer() {
         </nav>
         <nav aria-label="Company">
           <h3>Company</h3>
-          <Link href="/#honesty">About</Link>
+          <Link href="/#honesty">Principles</Link>
+          <a
+            href="https://github.com/omkarmalji/cited"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Source code <ArrowUpRight size={13} />
+          </a>
           <a
             href="https://github.com/omkarmalji/cited/issues/new"
             target="_blank"
@@ -35,7 +43,8 @@ export function Footer() {
         </nav>
       </div>
       <div className="footer-bottom">
-        <p>© {new Date().getFullYear()} Cited. All rights reserved.</p>
+        <p className="mono">{METHOD}</p>
+        <p>© {new Date().getFullYear()} Cited. MIT licensed.</p>
       </div>
     </footer>
   );

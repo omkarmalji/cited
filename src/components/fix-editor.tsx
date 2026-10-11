@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, Copy, ArrowRight, Printer } from "@phosphor-icons/react";
 import { Badge } from "./ui";
-import type { Facts, Fix } from "@/lib/types";
+import { FACT_LABELS, type Facts, type Fix } from "@/lib/types";
 export function FixEditor({ id, checkId }: { id: string; checkId: string }) {
   const [fix, setFix] = useState<Fix | null>(null),
     [facts, setFacts] = useState<Facts | null>(null),
@@ -82,112 +82,126 @@ export function FixEditor({ id, checkId }: { id: string; checkId: string }) {
       )}
       {fix && facts && (
         <>
-          <section className="panel">
-            <Badge
-              label={
-                fix.status === "approved"
-                  ? "Approved"
-                  : fix.status === "edited"
-                    ? "Edited"
-                    : "Draft"
-              }
-            />
-            <label style={{ marginTop: 24 }} htmlFor="fix-body">
-              {fix.status === "approved" ? "Approved content" : "Draft content"}
-            </label>
-            <textarea
-              id="fix-body"
-              className="editor-copy"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              readOnly={fix.status === "approved"}
-            />
-            <p style={{ fontSize: 12, marginTop: 16 }}>Confirmed facts used</p>
-            <div className="editor-facts">
-              {fix.factKeys
-                .filter((k) => facts[k])
-                .map((k) => (
-                  <span key={k}>
-                    {k}: {facts[k]}
-                  </span>
-                ))}
-            </div>
-            {fix.flags.map((flag, i) => (
-              <p role="alert" className="error-message" key={i}>
-                {flag}
-              </p>
-            ))}
-            <div className="action-row">
-              {fix.status !== "approved" ? (
-                <>
-                  <button
-                    className="button"
-                    disabled={busy}
-                    onClick={async () => {
-                      setBusy(true);
-                      setError("");
-                      try {
-                        await save();
-                        setMessage("Draft saved.");
-                      } catch (e) {
-                        setError((e as Error).message);
-                      }
-                      setBusy(false);
-                    }}
-                  >
-                    Save edit
-                  </button>
-                  <button
-                    className="button strong"
-                    disabled={busy}
-                    onClick={approve}
-                  >
-                    <Check size={16} />
-                    {busy
-                      ? "Checking facts..."
-                      : fix.type === "page"
-                        ? "Approve and publish"
-                        : "Approve"}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    className="button strong"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(fix.body);
-                        setMessage("Copied approved content.");
-                      } catch {
-                        setError(
-                          "Clipboard unavailable. Select the approved text to copy.",
-                        );
-                      }
-                    }}
-                  >
-                    <Copy size={16} />
-                    Copy approved content
-                  </button>
-                  {fix.slug && (
-                    <Link className="button" href={`/p/${fix.slug}`}>
-                      View published page <ArrowRight size={16} />
-                    </Link>
-                  )}
-                </>
+          <div className="editor-layout">
+            <section className="panel">
+              <Badge
+                label={
+                  fix.status === "approved"
+                    ? "Approved"
+                    : fix.status === "edited"
+                      ? "Edited"
+                      : "Draft"
+                }
+              />
+              <label style={{ marginTop: 24 }} htmlFor="fix-body">
+                {fix.status === "approved"
+                  ? "Approved content"
+                  : "Draft content"}
+              </label>
+              <textarea
+                id="fix-body"
+                className="editor-copy"
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                readOnly={fix.status === "approved"}
+              />
+              {fix.flags.map((flag, i) => (
+                <p role="alert" className="error-message" key={i}>
+                  {flag}
+                </p>
+              ))}
+              <div className="action-row">
+                {fix.status !== "approved" ? (
+                  <>
+                    <button
+                      className="button"
+                      disabled={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        setError("");
+                        try {
+                          await save();
+                          setMessage("Draft saved.");
+                        } catch (e) {
+                          setError((e as Error).message);
+                        }
+                        setBusy(false);
+                      }}
+                    >
+                      Save edit
+                    </button>
+                    <button
+                      className="button strong"
+                      disabled={busy}
+                      onClick={approve}
+                    >
+                      <Check size={16} />
+                      {busy
+                        ? "Checking facts..."
+                        : fix.type === "page"
+                          ? "Approve and publish"
+                          : "Approve"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className="button strong"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(fix.body);
+                          setMessage("Copied approved content.");
+                        } catch {
+                          setError(
+                            "Clipboard unavailable. Select the approved text to copy.",
+                          );
+                        }
+                      }}
+                    >
+                      <Copy size={16} />
+                      Copy approved content
+                    </button>
+                    {fix.slug && (
+                      <Link className="button" href={`/p/${fix.slug}`}>
+                        View published page <ArrowRight size={16} />
+                      </Link>
+                    )}
+                  </>
+                )}
+              </div>
+              {message && (
+                <p className="success-message" role="status">
+                  {message}
+                </p>
               )}
-            </div>
-            {message && (
-              <p className="success-message" role="status">
-                {message}
+              {sample && (
+                <p className="notice sample">
+                  Fictional sample content. Published example pages keep their
+                  Sample data label.
+                </p>
+              )}
+            </section>
+            <aside
+              className="panel fact-lock"
+              aria-labelledby="fact-lock-title"
+            >
+              <h2 id="fact-lock-title">Fact lock</h2>
+              <p>
+                This draft may only state these confirmed facts. Anything else
+                blocks approval.
               </p>
-            )}
-            {sample && (
-              <p className="notice sample">
-                Fictional sample content. Published example pages keep their
-                Sample data label.
-              </p>
-            )}
-          </section>
+              <dl>
+                {fix.factKeys
+                  .filter((k) => facts[k])
+                  .map((k) => (
+                    <div key={k}>
+                      <dt>{FACT_LABELS[k]}</dt>
+                      <dd>{facts[k]}</dd>
+                    </div>
+                  ))}
+              </dl>
+            </aside>
+          </div>
           {fix.type === "schema" && (
             <section className="panel">
               <h2>Add this to your website.</h2>

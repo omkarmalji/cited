@@ -3,18 +3,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, PencilSimple } from "@phosphor-icons/react";
 import { Citation } from "./ui";
-import type { Facts, Source } from "@/lib/types";
-const labels: Record<keyof Facts, string> = {
-  name: "Business name",
-  city: "City",
-  country: "Country",
-  category: "Category",
-  address: "Address",
-  hours: "Hours",
-  knownFor: "Known for",
-  website: "Website",
-  reviewUrl: "Review link",
-};
+import { FACT_LABELS, type Facts, type Source } from "@/lib/types";
+const labels = FACT_LABELS;
 export function Confirm({ id }: { id: string }) {
   const [facts, setFacts] = useState<Facts | null>(null),
     [sources, setSources] = useState<Source[]>([]),

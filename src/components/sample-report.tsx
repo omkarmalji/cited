@@ -1,37 +1,62 @@
-import { CheckCircle } from "@phosphor-icons/react/dist/ssr";
-import { Badge, Dots } from "./ui";
+import { Badge, Dots, RunMatrix } from "./ui";
+import { named, sortQuestions } from "@/lib/outlook";
+import type { Check } from "@/lib/types";
 
-export function SampleReport() {
+// Static excerpt of a saved fictional report, rendered from the same data the
+// example report uses so the landing page never shows numbers it can't back up.
+export function SampleReport({ check }: { check: Check }) {
+  const sorted = sortQuestions(check.questions);
+  const rows = [sorted[0], sorted[1], sorted[sorted.length - 1]];
+  const total = check.questions.reduce((n, q) => n + named(q), 0);
+  const finding = check.findings[0];
   return (
-    <div className="receipt">
+    <figure className="receipt">
       <div className="receipt-header">
         <span className="traffic" aria-hidden="true">
           <i />
           <i />
           <i />
         </span>
-        <span>brew-lane.visibility</span>
+        <span>{check.businessId}.report</span>
         <Badge label="Sample data" />
       </div>
       <div className="receipt-body">
-        <div className="receipt-business">
-          <span>BUSINESS</span>
-          <strong>Brew Lane Cafe</strong>
-          <span>Portland, United States</span>
+        <div className="receipt-score">
+          <div>
+            <span className="receipt-label">{check.facts.name}</span>
+            <strong>
+              {total}
+              <span> of 40 runs</span>
+            </strong>
+          </div>
+          <RunMatrix questions={check.questions} />
         </div>
-        <div className="receipt-question">
-          <span>QUESTION</span>
-          <p>“Where can I find a quiet cafe in Portland?”</p>
-          <Dots count={3} />
-        </div>
-        <div className="receipt-result">
-          <span>OUTLOOK</span>
-          <Badge label="Winnable now" />
-        </div>
-        <div className="receipt-bottom">
-          <CheckCircle size={16} />5 runs. Sources attached. No guesswork.
-        </div>
+        <ul className="receipt-questions">
+          {rows.map((q) => (
+            <li key={q.id}>
+              <p>{q.text}</p>
+              <span>
+                <Dots count={named(q)} />
+                <Badge label={q.status} />
+              </span>
+            </li>
+          ))}
+        </ul>
+        {finding && (
+          <div className="receipt-finding">
+            <span className="receipt-label">Why {finding.rival} wins</span>
+            <p>
+              {finding.body.split(". ")[0]}.{" "}
+              <span className="citation">
+                [{finding.citationIds[0]}] source
+              </span>
+            </p>
+          </div>
+        )}
       </div>
-    </div>
+      <figcaption className="receipt-caption">
+        Fictional saved example. Five runs per question, every finding cited.
+      </figcaption>
+    </figure>
   );
 }
