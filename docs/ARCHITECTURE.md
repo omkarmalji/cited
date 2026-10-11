@@ -24,6 +24,8 @@ Supabase `records` stores complete snapshots. A transactional trigger mirrors ch
 
 The worker takes a six-minute lease using a database row lock and advances one unit of work per foreground request. Each individual model call has a timeout, bounded retries and Zod validation. Polling drives foreground checks; an authenticated worker endpoint also advances queued work. A lost or interrupted browser does not lose saved answers. Provider failures create an explicit error state, never a fabricated score. The owner can resume a failed stage up to three times without discarding completed answers. Stale lease holders cannot overwrite newer work or a transferred report owner.
 
+Scheduled workers query only due opted-in reports and unfinished live checks, with database limits of three and five respectively. They do not download completed reports or fictional examples on every idle invocation. Pending checks are ordered by update time so newer work does not continually displace older work.
+
 For local development, `.data` provides durable JSON snapshots, atomic rename, and a process-local mutation queue. It is unsuitable for distributed production. Production refuses local storage unless explicitly enabled. Use Supabase for deployed judges’ reports.
 
 ## Identity and permissions

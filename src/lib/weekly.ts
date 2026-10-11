@@ -1,20 +1,10 @@
-import { listChecks, scheduleRecheck } from "./store";
+import { listWorkerChecks, scheduleRecheck } from "./store";
 import { work, total } from "./pipeline";
 import type { Check } from "./types";
 export async function processQueue() {
-  const checks = await listChecks();
   const started = Date.now();
   let processed = 0;
-  for (const check of checks
-    .filter(
-      (c) =>
-        !c.sample &&
-        c.status === "complete" &&
-        c.weeklyEnabled &&
-        c.nextRecheckAt &&
-        Date.parse(c.nextRecheckAt) <= Date.now(),
-    )
-    .slice(0, 3)) {
+  for (const check of await listWorkerChecks("due")) {
     const now = new Date().toISOString();
     const nextId = `weekly-${check.id.replace(/^weekly-/, "").slice(0, 36)}-${check.nextRecheckAt!.slice(0, 10)}`;
     const next: Check = {
@@ -44,9 +34,7 @@ export async function processQueue() {
     // One deterministic ID per predecessor and due date makes scheduler retries idempotent.
     await scheduleRecheck(check, next);
   }
-  for (const c of (await listChecks())
-    .filter((c) => !c.sample && !["complete", "error"].includes(c.status))
-    .slice(0, 5)) {
+  for (const c of await listWorkerChecks("pending")) {
     if (Date.now() - started > 45000) break;
     await work(c.id);
     processed++;

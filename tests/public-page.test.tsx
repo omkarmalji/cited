@@ -5,7 +5,11 @@ import type { Check } from "../src/lib/types";
 
 const { getRecord } = vi.hoisted(() => ({ getRecord: vi.fn() }));
 vi.mock("@/lib/store", () => ({ getRecord }));
-vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("Not found"); } }));
+vi.mock("next/navigation", () => ({
+  notFound: () => {
+    throw new Error("Not found");
+  },
+}));
 import Page, { generateMetadata } from "../src/app/p/[slug]/page";
 
 const slug = "cited-test-page";
@@ -14,7 +18,11 @@ function approved(sample: boolean): Check {
   const check = sampleCheck("brew-lane", "test-owner");
   check.sample = sample;
   const fix = check.fixes.find((f) => f.type === "page")!;
-  Object.assign(fix, { slug, status: "approved", approvedAt: new Date().toISOString() });
+  Object.assign(fix, {
+    slug,
+    status: "approved",
+    approvedAt: new Date().toISOString(),
+  });
   return check;
 }
 describe("approved public page", () => {
@@ -25,9 +33,13 @@ describe("approved public page", () => {
     check.facts.hours = "";
     getRecord.mockResolvedValue(check);
     const html = renderToStaticMarkup(await Page(props));
-    const schemas = [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)]
-      .map((match) => JSON.parse(match[1]));
-    expect(schemas.map((s) => s["@type"])).toEqual(["LocalBusiness", "FAQPage"]);
+    const schemas = [
+      ...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g),
+    ].map((match) => JSON.parse(match[1]));
+    expect(schemas.map((s) => s["@type"])).toEqual([
+      "LocalBusiness",
+      "FAQPage",
+    ]);
     expect(schemas[0].name).toBe(check.facts.name);
     expect(schemas[0].address).toBe(check.facts.address);
     expect(schemas[0]).not.toHaveProperty("openingHours");
@@ -39,7 +51,10 @@ describe("approved public page", () => {
     const html = renderToStaticMarkup(await Page(props));
     expect(html).toContain("Fictional business. Demonstration page only.");
     expect(html).not.toContain("application/ld+json");
-    expect((await generateMetadata(props)).robots).toEqual({ index: false, follow: false });
+    expect((await generateMetadata(props)).robots).toEqual({
+      index: false,
+      follow: false,
+    });
   });
   it("does not render an unapproved snapshot", async () => {
     const check = approved(false);

@@ -28,6 +28,8 @@ Each stored eight questions with five nonempty, model-attributed answers. Every 
 
 The deployed GitHub scheduler invocation [38171698744](https://github.com/omkarmalji/cited/actions/runs/38171698744) succeeded with three authenticated worker requests returning `processed: 3`. The unauthenticated worker returned 401. The workflow runs every fifteen minutes. Weekly due-date and idempotency semantics are verified separately by PostgreSQL tests; this invocation advanced the active queue rather than claiming a week-long observation.
 
+The subsequent idle-query refinement was checked against the dedicated Supabase project: due and pending queries both returned zero after all real acceptance checks completed, excluding completed reports and sample fixtures. Unit/PostgreSQL/public-page tests and TypeScript still passed. The idle deployed-worker response is checked separately after release.
+
 Browser coverage includes source-backed reports, 40 saved answers, unconfirmed hours rejected at approval, restored draft approved, published sample page, zero mentions, manual trend, reduced motion, keyboard skip link, and cross-session access denial.
 
 The refreshed narrated demo is exported as H264/AAC, 1440 by 900, 177.44 seconds. Its fictional example flow includes source evidence, rejected unsupported hours, explicit approval and the public sample page. Public YouTube publication is pending.

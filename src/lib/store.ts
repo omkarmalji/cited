@@ -181,6 +181,52 @@ export async function listChecks(identity?: string) {
     (c): c is Check => !!c && (!identity || c.owner === identity),
   );
 }
+export async function listWorkerChecks(kind: "due" | "pending") {
+  const now = new Date().toISOString();
+  const db = database();
+  if (db) {
+    let query = db
+      .from("records")
+      .select("data")
+      .eq("kind", "checks")
+      .eq("data->>sample", "false");
+    if (kind === "due") {
+      query = query
+        .eq("data->>status", "complete")
+        .eq("data->>weeklyEnabled", "true")
+        .lte("data->>nextRecheckAt", now)
+        .limit(3);
+    } else {
+      query = query
+        .in("data->>status", [
+          "queued",
+          "questions",
+          "runs",
+          "diagnosis",
+          "verifyDiagnosis",
+          "fixes",
+          "verifyFixes",
+        ])
+        .order("updated_at", { ascending: true })
+        .limit(5);
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []).map((r) => r.data as Check);
+  }
+  return (await listChecks())
+    .filter(
+      (c) =>
+        !c.sample &&
+        (kind === "due"
+          ? c.status === "complete" &&
+            c.weeklyEnabled &&
+            !!c.nextRecheckAt &&
+            Date.parse(c.nextRecheckAt) <= Date.parse(now)
+          : !["complete", "error"].includes(c.status)),
+    )
+    .slice(0, kind === "due" ? 3 : 5);
+}
 export async function transferOwner(previous: string, next: string) {
   const db = database();
   if (db) {
