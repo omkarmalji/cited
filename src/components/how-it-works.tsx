@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { ListNumbers } from "@phosphor-icons/react";
 
 const steps = [
   {
@@ -62,6 +63,9 @@ export function HowItWorks({ preview }: { preview: React.ReactNode }) {
   return (
     <section id="how-it-works" className="container protocol">
       <div className="protocol-side">
+        <span className="pill-label">
+          <ListNumbers size={12} aria-hidden="true" /> Three steps
+        </span>
         <h2 className="two-tone">
           How it <span>works</span>
         </h2>

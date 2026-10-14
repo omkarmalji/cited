@@ -9,13 +9,15 @@ import {
   Quotes,
   SealCheck,
   ShieldCheck,
+  SquaresFour,
+  Tag,
   Target,
   UserCircleCheck,
 } from "@phosphor-icons/react/dist/ssr";
 import { HeroScene } from "@/components/hero-scene";
 import { CheckForm } from "@/components/check-form";
 import { Motion } from "@/components/motion";
-import { Badge } from "@/components/ui";
+import { Badge, Rule } from "@/components/ui";
 import { SampleReport } from "@/components/sample-report";
 import { ComingSoon } from "@/components/coming-soon";
 import { HowItWorks } from "@/components/how-it-works";
@@ -93,7 +95,6 @@ export default function Home() {
       <main id="main" className="landing-page">
         <section className="hero">
           <HeroScene />
-          <div className="hero-ring" aria-hidden="true" />
           <div className="container hero-content">
             <p className="hero-version" data-enter>
               AI visibility check · v1
@@ -122,11 +123,13 @@ export default function Home() {
                 See a sample report
               </Link>
             </div>
-            <ul className="stat-cards" data-enter>
+            <ul className="stat-cards cross-frame" data-enter>
               {stats.map((s, i) => (
                 <li key={s.label}>
                   <span className="stat-top">
-                    <s.icon size={18} aria-hidden="true" />
+                    <span className="icon-box">
+                      <s.icon size={16} aria-hidden="true" />
+                    </span>
                     {s.tag && <span className="stat-tag">{s.tag}</span>}
                     <span className="stat-index">0{i + 1}</span>
                   </span>
@@ -137,7 +140,7 @@ export default function Home() {
             </ul>
           </div>
         </section>
-
+        <Rule />
         <section className="manifesto container" data-reveal>
           <p>
             Stop guessing. Start{" "}
@@ -154,17 +157,22 @@ export default function Home() {
           </p>
         </section>
 
+        <Rule />
         <HowItWorks preview={<SampleReport check={preview} />} />
+        <Rule />
 
         <section id="examples" className="container section" data-reveal>
           <div className="section-title">
+            <span className="pill-label">
+              <SquaresFour size={12} aria-hidden="true" /> Saved reports
+            </span>
             <h2>Examples</h2>
             <p className="kicker">
               / Saved reports / Fictional businesses{" "}
               <Badge label="Sample data" />
             </p>
           </div>
-          <div className="mosaic">
+          <div className="mosaic cross-frame">
             {tile(brew, tiles[0], true)}
             <div className="mosaic-stack">
               {tile(moss, tiles[1])}
@@ -183,22 +191,27 @@ export default function Home() {
             {tile(still, tiles[3], true)}
           </div>
         </section>
-
+        <Rule />
         <section
           id="honesty"
           className="section principles-section"
           data-reveal
         >
           <div className="container">
+            <span className="pill-label center">
+              <ShieldCheck size={12} aria-hidden="true" /> Principles
+            </span>
             <h2 className="center-title">
               Honest <span>by design</span>
             </h2>
-            <ul className="quote-cards">
+            <ul className="quote-cards cell-grid cross-frame">
               {principles.map((p) => (
                 <li key={p.title}>
                   <p>“{p.quote}”</p>
                   <span className="quote-by">
-                    <p.icon size={22} aria-hidden="true" />
+                    <span className="icon-box">
+                      <p.icon size={18} aria-hidden="true" />
+                    </span>
                     <span>
                       <strong>{p.title}</strong>
                       <small>{p.rule}</small>
@@ -209,13 +222,16 @@ export default function Home() {
             </ul>
           </div>
         </section>
-
+        <Rule />
         <section id="pricing" className="container section" data-reveal>
           <div className="section-title">
+            <span className="pill-label">
+              <Tag size={12} aria-hidden="true" /> Plans
+            </span>
             <h2>Pricing</h2>
             <p className="kicker">/ Free today / Paid plans planned</p>
           </div>
-          <div className="pricing-grid">
+          <div className="pricing-grid cell-grid cross-frame">
             <article className="price-card featured">
               <span className="plan-name">
                 Free check{" "}
@@ -288,7 +304,7 @@ export default function Home() {
             </article>
           </div>
         </section>
-
+        <Rule />
         <section className="final-cta" data-reveal>
           <h2>
             Ready to be <span>cited?</span>
@@ -300,7 +316,7 @@ export default function Home() {
             Check my business
           </a>
         </section>
-
+        <Rule />
         <section className="container start-section" data-reveal>
           <div className="start-copy">
             <h2>Start your check</h2>
@@ -321,6 +337,7 @@ export default function Home() {
           </div>
           <CheckForm variant="line" />
         </section>
+        <Rule />
       </main>
     </Motion>
   );

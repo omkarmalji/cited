@@ -28,6 +28,15 @@ export function Badge({
     </span>
   );
 }
+// Full-bleed hairline with crosshair markers where it meets the page rails.
+export function Rule() {
+  return (
+    <div className="grid-rule" aria-hidden="true">
+      <i />
+      <i />
+    </div>
+  );
+}
 export const outlookColor = (label: string) =>
   ({
     "Winnable now": "green",

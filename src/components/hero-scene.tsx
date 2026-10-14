@@ -25,7 +25,7 @@ export function HeroScene() {
           speed={1.0}
           hue={-100}
           saturation={1.25}
-          brightness={1.0}
+          brightness={0.8}
         />
       )}
     </div>
