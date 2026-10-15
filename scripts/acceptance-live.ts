@@ -11,7 +11,8 @@ const businesses = [
   { name: "Bicycle Habitat", city: "New York" },
 ];
 const baseURL = process.env.CITED_ACCEPTANCE_URL || "http://localhost:3000";
-const output = process.env.CITED_ACCEPTANCE_OUTPUT || ".data/live-acceptance.json";
+const output =
+  process.env.CITED_ACCEPTANCE_OUTPUT || ".data/live-acceptance.json";
 async function main() {
   const results = await Promise.all(
     businesses.map(async (input) => {
@@ -22,7 +23,8 @@ async function main() {
       async function get<T>(path: string): Promise<T> {
         const response = await client.get(path);
         const value = await response.json();
-        if (!response.ok()) throw new Error(value.error || `HTTP ${response.status()}`);
+        if (!response.ok())
+          throw new Error(value.error || `HTTP ${response.status()}`);
         return value as T;
       }
       async function post(path: string, data?: unknown) {
@@ -37,12 +39,15 @@ async function main() {
       }
       try {
         const resolved = await post("/api/resolve", input);
-        const candidate = await get<{ facts: Facts }>(`/api/candidates/${resolved.id}`);
+        const candidate = await get<{ facts: Facts }>(
+          `/api/candidates/${resolved.id}`,
+        );
         console.log(
           `${input.city}: resolved ${candidate.facts.name}, ${candidate.facts.category}.`,
         );
         const created = await post("/api/checks", {
           candidateId: resolved.id,
+          mode: "deep",
           facts: candidate.facts,
         });
         id = created.id;
@@ -53,15 +58,20 @@ async function main() {
             if (!check.retryStage || retries >= 3) throw new Error(check.error);
             await post(`/api/checks/${id}/retry`);
             retries++;
-            console.log(`${input.city}: resuming ${check.retryStage}, retry ${retries}.`);
+            console.log(
+              `${input.city}: resuming ${check.retryStage}, retry ${retries}.`,
+            );
             continue;
           }
           if (check.status === "complete") {
             if (
               check.questions.length !== 8 ||
-              check.questions.some((q) => q.runs.length !== 5 ||
-                new Set(q.runs.map((r) => r.index)).size !== 5 ||
-                q.runs.some((r) => !r.answer.trim() || !r.model))
+              check.questions.some(
+                (q) =>
+                  q.runs.length !== 5 ||
+                  new Set(q.runs.map((r) => r.index)).size !== 5 ||
+                  q.runs.some((r) => !r.answer.trim() || !r.model),
+              )
             )
               throw new Error("Incomplete counts.");
             if (
@@ -74,8 +84,14 @@ async function main() {
               )
             )
               throw new Error("Invalid finding citations.");
-            if (check.fixes.length !== 4 || new Set(check.fixes.map((f) => f.type)).size !== 4 ||
-                check.fixes.some((f) => f.status === "approved" || f.flags.length || !f.body.trim()))
+            if (
+              check.fixes.length !== 4 ||
+              new Set(check.fixes.map((f) => f.type)).size !== 4 ||
+              check.fixes.some(
+                (f) =>
+                  f.status === "approved" || f.flags.length || !f.body.trim(),
+              )
+            )
               throw new Error("Expected four verified, unapproved fixes.");
             console.log(
               `${input.city}: PASS, 40 answers, ${check.sources.length} fetched sources, ${check.findings.length} cited findings, 4 drafts.`,
@@ -89,7 +105,11 @@ async function main() {
               baseURL,
               retries,
               answers: 40,
-              drafts: check.fixes.map((f) => ({ type: f.type, status: f.status, flags: f.flags })),
+              drafts: check.fixes.map((f) => ({
+                type: f.type,
+                status: f.status,
+                flags: f.flags,
+              })),
               facts: check.facts,
               sources: check.sources.map((s) => ({
                 url: s.url,
@@ -106,7 +126,10 @@ async function main() {
               ],
             };
           }
-          if (check.leaseUntil && new Date(check.leaseUntil).getTime() > Date.now()) {
+          if (
+            check.leaseUntil &&
+            new Date(check.leaseUntil).getTime() > Date.now()
+          ) {
             await delay(5000);
             continue;
           }
@@ -137,10 +160,7 @@ async function main() {
     }),
   );
   await mkdir(dirname(output), { recursive: true });
-  await writeFile(
-    output,
-    JSON.stringify(results, null, 2),
-  );
+  await writeFile(output, JSON.stringify(results, null, 2));
   if (results.some((r) => !r.passed)) process.exitCode = 1;
 }
 main().catch((error) => {

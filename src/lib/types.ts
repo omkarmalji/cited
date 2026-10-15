@@ -47,6 +47,7 @@ export type Question = {
   status: Status;
   runs: Run[];
   sourceIds?: number[];
+  error?: string;
 };
 export type Finding = { body: string; rival: string; citationIds: number[] };
 export type Fix = {
@@ -69,6 +70,7 @@ export type Check = {
   createdAt: string;
   updatedAt: string;
   sample: boolean;
+  mode?: "quick" | "deep";
   status:
     | "queued"
     | "questions"

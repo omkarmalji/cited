@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, PencilSimple } from "@phosphor-icons/react";
 import { Citation } from "./ui";
+import { CheckProgress } from "./check-progress";
 import { FACT_LABELS, type Facts, type Source } from "@/lib/types";
 const labels = FACT_LABELS;
 export function Confirm({ id }: { id: string }) {
@@ -12,6 +13,7 @@ export function Confirm({ id }: { id: string }) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const router = useRouter();
+  const [started] = useState(() => Date.now());
   useEffect(() => {
     const controller = new AbortController();
     fetch(`/api/candidates/${id}`, { signal: controller.signal })
@@ -51,7 +53,7 @@ export function Confirm({ id }: { id: string }) {
               const response = await fetch("/api/checks", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ candidateId: id, facts }),
+                body: JSON.stringify({ candidateId: id, facts, mode: "deep" }),
               });
               const data = await response.json();
               if (!response.ok) throw new Error(data.error);
@@ -118,7 +120,14 @@ export function Confirm({ id }: { id: string }) {
           </div>
         </form>
       ) : (
-        !error && <p role="status">Finding your details...</p>
+        !error && (
+          <CheckProgress
+            name="Your business"
+            city="Confirming public details"
+            since={started}
+            phase="lookup"
+          />
+        )
       )}
     </main>
   );

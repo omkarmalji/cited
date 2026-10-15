@@ -5,7 +5,9 @@ import type { Check } from "@/lib/types";
 // Static excerpt of a saved fictional report, rendered from the same data the
 // example report uses so the landing page never shows numbers it can't back up.
 export function SampleReport({ check }: { check: Check }) {
-  const sorted = sortQuestions(check.questions);
+  const sorted = sortQuestions(
+    check.questions.filter((q) => q.kind === "broad"),
+  );
   const rows = [sorted[0], sorted[1], sorted[sorted.length - 1]];
   const total = check.questions.reduce((n, q) => n + named(q), 0);
   const finding = check.findings[0];
@@ -55,7 +57,8 @@ export function SampleReport({ check }: { check: Check }) {
         )}
       </div>
       <figcaption className="receipt-caption">
-        Fictional saved example. Five runs per question, every finding cited.
+        Fictional deep report. Broad questions shown, five runs each. Every
+        finding cited.
       </figcaption>
     </figure>
   );

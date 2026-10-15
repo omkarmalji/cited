@@ -1,13 +1,16 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Question, Source, Status } from "@/lib/types";
 export function Wordmark() {
   return (
     <Link href="/" className="wordmark" aria-label="Cited home">
-      <span className="brand-mark" aria-hidden="true">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <i key={i} className={i === 4 ? "empty" : ""} />
-        ))}
-      </span>
+      <Image
+        className="brand-mark"
+        src="/brand/cited-mark.webp"
+        width={30}
+        height={30}
+        alt=""
+      />
       Cited<span className="wordmark-period">.</span>
     </Link>
   );
@@ -63,19 +66,21 @@ export function RunMatrix({ questions }: { questions: Question[] }) {
     </span>
   );
 }
-export function Dots({ count }: { count: number }) {
+export function Dots({ count, total = 5 }: { count: number; total?: number }) {
   return (
     <span
       className="run-score"
       role="img"
-      aria-label={`Recommended in ${count} of 5 runs`}
+      aria-label={`Recommended in ${count} of ${total} runs`}
     >
       <span className="run-dots" aria-hidden="true">
-        {[0, 1, 2, 3, 4].map((i) => (
+        {Array.from({ length: total }, (_, i) => i).map((i) => (
           <i className={i < count ? "filled" : ""} key={i} />
         ))}
       </span>
-      <span className="mono">{count} of 5</span>
+      <span className="mono">
+        {count} of {total}
+      </span>
     </span>
   );
 }

@@ -16,6 +16,7 @@ export async function modelJSON<T>(
   system: string,
   input: unknown,
   schema: z.ZodType<T>,
+  options: { timeoutMs?: number; maxTokens?: number; attempts?: number } = {},
 ) {
   if (!configured())
     throw new Error(
@@ -31,17 +32,21 @@ export async function modelJSON<T>(
     apiKey: process.env.NEBIUS_API_KEY,
     baseURL:
       process.env.NEBIUS_BASE_URL || "https://api.tokenfactory.nebius.com/v1/",
-    timeout: 60000,
-    maxRetries: 1,
+    timeout: options.timeoutMs || 60000,
+    maxRetries: options.timeoutMs ? 0 : 1,
   });
   const schemaText = JSON.stringify(
     z.toJSONSchema(schema, { unrepresentable: "any" }),
   );
-  for (let attempt = 0; attempt < 2; attempt++) {
+  const attempts = options.attempts || 2;
+  for (let attempt = 0; attempt < attempts; attempt++) {
     const response = await client.chat.completions.create({
       model,
       temperature: 0.6,
-      max_tokens: role === "FAST" ? 6000 : 10000,
+      max_tokens: options.maxTokens || (role === "FAST" ? 1200 : 10000),
+      ...(role === "FAST"
+        ? { chat_template_kwargs: { enable_thinking: false } }
+        : {}),
       response_format: { type: "json_object" },
       messages: [
         {
@@ -82,7 +87,7 @@ export async function modelJSON<T>(
               : undefined,
         }),
       );
-      if (attempt === 1)
+      if (attempt === attempts - 1)
         throw new Error(
           `The ${role.toLowerCase()} model returned invalid data. No report was fabricated.`,
           { cause: e },
@@ -91,8 +96,51 @@ export async function modelJSON<T>(
   }
   throw new Error("Model failed.");
 }
-export async function search(query: string): Promise<Source[]> {
+export async function search(
+  query: string,
+  options: { quick?: boolean } = {},
+): Promise<Source[]> {
   if (!process.env.TAVILY_API_KEY) throw new Error("Tavily is not configured.");
+  if (options.quick) {
+    // A quick snapshot uses search excerpts. Deep research alone fetches full pages.
+    const response = await fetch("https://api.tavily.com/search", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.TAVILY_API_KEY}`,
+      },
+      body: JSON.stringify({
+        query,
+        search_depth: "basic",
+        max_results: 5,
+        include_raw_content: false,
+        include_answer: false,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok)
+      throw new Error(
+        "Web search is busy. Please retry the unfinished searches.",
+      );
+    const data = await response.json();
+    const parsed = z
+      .object({
+        results: z.array(
+          z.object({ url: z.string(), title: z.string(), content: z.string() }),
+        ),
+      })
+      .parse(data);
+    return parsed.results
+      .filter((s) => /^https?:\/\//.test(s.url) && s.content.trim())
+      .map((s, i) => ({
+        id: i + 1,
+        url: s.url,
+        title: s.title,
+        domain: new URL(s.url).hostname,
+        excerpt: s.content.slice(0, 1600),
+        fetchedAt: new Date().toISOString(),
+      }));
+  }
   const client = tavily({ apiKey: process.env.TAVILY_API_KEY });
   const result = await client.search(query, {
     searchDepth: "advanced",

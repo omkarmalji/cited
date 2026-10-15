@@ -19,13 +19,13 @@ const steps = [
   {
     id: "ask",
     short: "Ask",
-    note: "Eight questions, five runs each.",
+    note: "Five everyday searches. Answers arrive live.",
     title: "See what AI says",
-    text: "We ask eight questions your customers might ask, five times each, using fresh web sources. Then we explain why a rival gets named instead of you.",
+    text: "Start with five broad questions like best sweet shops in Bhopal. Your answers arrive as they finish. Choose deep research for eight questions, repeated runs and a verified rival diagnosis.",
     points: [
       "NVIDIA Nemotron answers every run",
       "Tavily search supplies the sources",
-      "Rival explanations carry citations",
+      "Deep research adds cited rival explanations",
     ],
     tone: "blue",
   },

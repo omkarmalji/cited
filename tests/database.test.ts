@@ -10,6 +10,9 @@ beforeAll(async () => {
     "create role anon; create role authenticated; create role service_role;",
   );
   await db.exec(await readFile("supabase/migrations/001_cited.sql", "utf8"));
+  await db.exec(
+    await readFile("supabase/migrations/002_quick_checks.sql", "utf8"),
+  );
 }, 60000);
 afterAll(async () => {
   await db?.close();
@@ -22,6 +25,37 @@ async function insert(check: Check, kind = "checks") {
   ]);
 }
 describe("Postgres migration and durable queue", () => {
+  it("accepts exact quick snapshots and rejects missing answers, niche questions and unknown modes", async () => {
+    const quick = sampleCheck("brew-lane", "quick-test");
+    quick.mode = "quick";
+    quick.questions = quick.questions
+      .slice(0, 5)
+      .map((q) => ({ ...q, kind: "broad", runs: q.runs.slice(0, 1) }));
+    await insert(quick);
+    const rows = await db.query<{ count: number }>(
+      "select count(*)::int as count from runs r join questions q on q.id=r.question_id where q.check_id=$1",
+      [quick.id],
+    );
+    expect(rows.rows[0].count).toBe(5);
+    const missing = structuredClone(quick);
+    missing.id = "incomplete-quick";
+    missing.questions[0].runs = [];
+    await expect(insert(missing)).rejects.toThrow(
+      "Quick reports require 5 broad questions and 1 run each",
+    );
+    const niche = structuredClone(quick);
+    niche.id = "niche-quick";
+    niche.questions[0].kind = "niche";
+    await expect(insert(niche)).rejects.toThrow(
+      "Quick reports require 5 broad questions and 1 run each",
+    );
+    const unknown = {
+      ...quick,
+      id: "unknown-mode",
+      mode: "unknown",
+    } as unknown as Check;
+    await expect(insert(unknown)).rejects.toThrow("Unknown check mode");
+  });
   it("mirrors complete reports and enforces citations at the DB boundary", async () => {
     const check = sampleCheck("brew-lane", "test");
     await insert(check);

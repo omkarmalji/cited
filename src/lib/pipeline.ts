@@ -10,17 +10,8 @@ import {
   SAFE_COPY,
 } from "./honesty";
 import { finishLease, takeLease } from "./store";
-import type { Check } from "./types";
-const questionsSchema = z.object({
-  questions: z
-    .array(
-      z.object({
-        text: z.string().min(10).max(240),
-        kind: z.enum(["broad", "niche"]),
-      }),
-    )
-    .length(8),
-});
+import type { Check, Question } from "./types";
+import { broadQuestions, nicheQuestions } from "./questions";
 const answerSchema = z.object({
   answer: z.string().min(1),
   recommendations: z.array(z.string()),
@@ -37,38 +28,132 @@ const findingSchema = z.object({
     )
     .max(6),
 });
+
+async function answerQuestion(
+  check: Check,
+  question: Question,
+  quick: boolean,
+  index: number,
+) {
+  const context = check.sources.filter((s) =>
+    question.sourceIds?.includes(s.id),
+  );
+  if (!context.length)
+    throw new Error("No sources found for this search. Retry to check again.");
+  const result = await modelJSON(
+    "FAST",
+    "Answer this customer question as a business recommender using only supplied sources. Never favor any business. Keep the answer under 80 words and recommend at most 3 businesses. JSON: {answer:string,recommendations:[exact business names you actually recommend],citationIds:[source ids used]}. Never invent a business or cite an unrelated source. If sources do not support a recommendation, return an empty recommendations array and explain the limitation.",
+    {
+      question: question.text,
+      sources: context.map((s) => ({
+        ...s,
+        excerpt: s.excerpt.slice(0, quick ? 1600 : 4000),
+      })),
+    },
+    answerSchema.refine(
+      (result) =>
+        result.citationIds.every((id) => context.some((s) => s.id === id)) &&
+        (!result.recommendations.length || result.citationIds.length > 0),
+      "Recommendations need valid citation IDs from these sources.",
+    ),
+    quick ? { timeoutMs: 12000, maxTokens: 600, attempts: 1 } : {},
+  );
+  return {
+    index,
+    mentioned: mentioned(check.facts.name, result.recommendations),
+    answer: result.citationIds.length
+      ? result.answer
+      : "These sources did not support a business recommendation for this question.",
+    model: process.env.MODEL_FAST!,
+    citationIds: result.citationIds,
+    recommendations: result.recommendations,
+  };
+}
+
+async function fetchQuestionSources(
+  check: Check,
+  question: Question,
+  quick: boolean,
+) {
+  const fetched = await search(question.text, { quick });
+  question.sourceIds = [];
+  for (const source of fetched) {
+    let existing = check.sources.find(
+      (s) => s.url === source.url && s.excerpt === source.excerpt,
+    );
+    if (!existing) {
+      existing = { ...source, id: check.sources.length + 1 };
+      check.sources.push(existing);
+    }
+    question.sourceIds.push(existing.id);
+  }
+}
+
+async function quickWork(check: Check, token: string) {
+  if (!check.questions.length)
+    check.questions = broadQuestions(check.facts).map((q) => ({
+      ...q,
+      id: randomUUID(),
+      status: "Needs your check",
+      runs: [],
+    }));
+  check.status = "runs";
+  check.progress = "Searching five everyday customer questions";
+  await finishLease(check, token, false);
+  let writes = Promise.resolve();
+  const checkpoint = () => {
+    writes = writes.then(() =>
+      finishLease(structuredClone(check), token, false),
+    );
+    return writes;
+  };
+  const tasks = check.questions
+    .filter((q) => !q.runs.length)
+    .map(async (question) => {
+      delete question.error;
+      try {
+        await fetchQuestionSources(check, question, true);
+        question.runs = [await answerQuestion(check, question, true, 0)];
+      } catch (error) {
+        question.error =
+          error instanceof Error && /no sources/i.test(error.message)
+            ? error.message
+            : "This search did not finish. Retry only the unfinished searches.";
+      }
+      const done = check.questions.filter((q) => q.runs.length === 1).length;
+      check.progress = `${done} of 5 answers ready`;
+      await checkpoint();
+    });
+  await Promise.all(tasks);
+  await writes;
+  if (check.questions.some((q) => !q.runs.length))
+    throw new Error(
+      "Some searches took too long or had no usable sources. Your finished answers are saved. Retry the unfinished searches.",
+    );
+  // Quick mode ships fact-only templates. It never pretends to have performed
+  // the independent rival diagnosis or model draft verification of a deep check.
+  check.fixes = buildFixes(check.facts, randomUUID);
+  check.findings = [];
+  check.status = "complete";
+  check.progress =
+    "Five answers ready. Your fact-only drafts are ready to review.";
+}
 export async function work(id: string) {
   const lease = await takeLease(id);
   if (!lease) return;
   const { check, token } = lease;
   try {
-    if (check.status === "queued" || check.status === "questions") {
+    if (check.mode === "quick") {
+      await quickWork(check, token);
+    } else if (check.status === "queued" || check.status === "questions") {
       check.status = "questions";
-      check.progress = "Asking eight customer questions";
+      check.progress =
+        "Preparing five broad questions and three specialty questions";
       if (!check.questions.length) {
-        const { questions } = await modelJSON(
-          "REASON",
-          'Generate exactly 8 LOCAL BUSINESS DISCOVERY questions that a customer asks an AI assistant. Every question must explicitly include the confirmed city and business category. Exactly 3 broad and 5 niche. Ask which businesses to visit or recommend. NEVER ask a question addressed to the business, a booking request, or a factual FAQ like "Are you open Sunday?". NEVER include the target business name, its website, or imply preference for it. Use only confirmed facts for niche traits, with neighborhood, specialty or confirmed hours. Example: "Which coffee shops in London offer quiet seating?" JSON: {questions:[{text,kind:"broad"|"niche"}]}',
-          check.facts,
-          questionsSchema.refine(
-            ({ questions }) =>
-              questions.filter((q) => q.kind === "broad").length === 3 &&
-              questions.every(
-                (q) =>
-                  q.text
-                    .toLocaleLowerCase()
-                    .includes(check.facts.city.toLocaleLowerCase()) &&
-                  !q.text
-                    .toLocaleLowerCase()
-                    .includes(check.facts.name.toLocaleLowerCase()) &&
-                  !/\b(?:are you|do you|your website|your business|our|we)\b/i.test(
-                    q.text,
-                  ),
-              ),
-            "Use 3 broad and 5 niche discovery questions with a city, without naming the target.",
-          ),
-        );
-        check.questions = questions.map((q) => ({
+        check.questions = [
+          ...broadQuestions(check.facts),
+          ...nicheQuestions(check.facts),
+        ].map((q) => ({
           ...q,
           id: randomUUID(),
           status: "Needs your check",
@@ -84,53 +169,22 @@ export async function work(id: string) {
         check.progress = "Reading why other businesses win";
       } else {
         const questionIndex = check.questions.indexOf(question);
-        if (question.runs.length === 0) {
-          const fetched = await search(question.text);
-          question.sourceIds = [];
-          for (const s of fetched) {
-            let existing = check.sources.find(
-              (x) => x.url === s.url && x.excerpt === s.excerpt,
-            );
-            if (!existing) {
-              existing = { ...s, id: check.sources.length + 1 };
-              check.sources.push(existing);
-            }
-            question.sourceIds.push(existing.id);
-          }
-        }
-        const context = check.sources.filter((s) =>
-          question.sourceIds?.includes(s.id),
+        if (question.runs.length === 0)
+          await fetchQuestionSources(check, question, false);
+        const missing = Array.from({ length: 5 }, (_, i) => i).filter(
+          (index) => !question.runs.some((run) => run.index === index),
         );
-        const result = await modelJSON(
-          "FAST",
-          "Answer this customer question as a business recommender using only supplied sources. Never favor any business. Keep the answer under 120 words and recommend at most 3 businesses. JSON: {answer:string,recommendations:[exact business names you actually recommend],citationIds:[source ids used]}. Do not recommend businesses absent from sources.",
-          { question: question.text, sources: context },
-          answerSchema.refine(
-            (result) =>
-              result.citationIds.every((id) =>
-                context.some((s) => s.id === id),
-              ) &&
-              (!result.recommendations.length || result.citationIds.length > 0),
-            "Recommendations need valid citation IDs from these sources.",
-          ),
+        const outcomes = await Promise.allSettled(
+          missing.map((index) => answerQuestion(check, question, false, index)),
         );
-        if (
-          result.recommendations.length > 0 &&
-          result.citationIds.length === 0
-        )
-          throw new Error(
-            "A recommendation lacked valid sources. Check stopped.",
-          );
-        question.runs.push({
-          index: question.runs.length,
-          mentioned: mentioned(check.facts.name, result.recommendations),
-          answer: result.citationIds.length
-            ? result.answer
-            : "These sources did not support a business recommendation for this question.",
-          model: process.env.MODEL_FAST!,
-          citationIds: result.citationIds,
-          recommendations: result.recommendations,
-        });
+        for (const outcome of outcomes)
+          if (outcome.status === "fulfilled") question.runs.push(outcome.value);
+        question.runs.sort((a, b) => a.index - b.index);
+        // Successful runs survive a transient sibling failure and are not charged again on retry.
+        const failed = outcomes.find(
+          (outcome) => outcome.status === "rejected",
+        );
+        if (failed?.status === "rejected") throw failed.reason;
         question.status = classify(
           question.runs,
           question.kind,

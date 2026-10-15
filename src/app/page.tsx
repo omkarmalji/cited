@@ -26,11 +26,11 @@ import { examples, sampleCheck } from "@/lib/examples";
 const stats = [
   {
     icon: MagnifyingGlass,
-    value: "8",
-    label: "Customer questions",
-    tag: "Per check",
+    value: "5",
+    label: "Everyday searches",
+    tag: "Quick check",
   },
-  { icon: ChatCircleText, value: "40", label: "AI answers read" },
+  { icon: ChatCircleText, value: "~30s", label: "Quick-check target" },
   { icon: SealCheck, value: "0", label: "Claims without a source" },
 ];
 const tiles = ["sky", "ember", "dune", "crimson"] as const;
@@ -45,7 +45,7 @@ const principles = [
   {
     icon: Target,
     quote:
-      "Every question runs five times and shows five dots. Variation is never dressed up as a single percentage.",
+      "Quick checks show one sourced answer per question. Deep checks repeat each question five times, so you can see how answers vary.",
     title: "Repeat, then report",
     rule: "Scoring rule",
   },
@@ -112,17 +112,14 @@ export default function Home() {
               <p>Customers ask AI who to visit.</p>
             </div>
             <p className="hero-description" data-enter>
-              Cited asks AI the questions your customers ask, five times each,
-              then shows who gets named, why, and the fixes that close the gap.
+              See who AI recommends. Get the sources and fixes you approve.
             </p>
-            <div className="hero-actions" data-enter>
-              <a className="button strong" href="#check">
-                Run free check
-              </a>
-              <Link className="button" href="/examples/brew-lane">
-                See a sample report
-              </Link>
+            <div className="hero-entry" data-enter>
+              <CheckForm />
             </div>
+            <Link className="hero-sample-link" href="/examples/brew-lane">
+              See a saved deep report <ArrowUpRight size={14} />
+            </Link>
             <ul className="stat-cards cross-frame" data-enter>
               {stats.map((s, i) => (
                 <li key={s.label}>
@@ -242,14 +239,16 @@ export default function Home() {
               </div>
               <ul>
                 <li>
-                  <Check size={14} aria-hidden="true" />8 questions, 5 runs each
+                  <Check size={14} aria-hidden="true" />5 broad questions, 1
+                  answer each
                 </li>
                 <li>
                   <Check size={14} aria-hidden="true" />
-                  Sources and rival explanations
+                  Sources with every recommendation
                 </li>
                 <li>
-                  <Check size={14} aria-hidden="true" />A fact-checked fix pack
+                  <Check size={14} aria-hidden="true" />
+                  Fact-only drafts you review
                 </li>
               </ul>
               <a className="button strong" href="#check">
@@ -309,9 +308,7 @@ export default function Home() {
           <h2>
             Ready to be <span>cited?</span>
           </h2>
-          <p>
-            Free check. No signup. Forty AI answers, every one with its sources.
-          </p>
+          <p>Five searches. Live answers. A next step you can actually use.</p>
           <a className="button strong" href="#check">
             Check my business
           </a>
@@ -322,7 +319,9 @@ export default function Home() {
             <h2>Start your check</h2>
             <p>
               Enter your business name and city. We find your details, you
-              confirm them, then we read forty AI answers and draft your fixes.
+              confirm them, then watch five everyday searches become sourced
+              answers. Choose deep research for repeated runs and niche
+              questions.
             </p>
             <ul>
               <li>
@@ -335,7 +334,9 @@ export default function Home() {
               </li>
             </ul>
           </div>
-          <CheckForm variant="line" />
+          <a className="button strong" href="#check">
+            Start my free check <ArrowUpRight size={16} />
+          </a>
         </section>
         <Rule />
       </main>

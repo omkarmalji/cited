@@ -30,6 +30,9 @@ export async function processQueue() {
       latestRecheckId: undefined,
       leaseToken: undefined,
       leaseUntil: undefined,
+      retryStage: undefined,
+      retryCount: 0,
+      error: undefined,
     };
     // One deterministic ID per predecessor and due date makes scheduler retries idempotent.
     await scheduleRecheck(check, next);

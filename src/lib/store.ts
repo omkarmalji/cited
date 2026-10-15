@@ -108,10 +108,12 @@ export async function takeLease(id: string) {
     return { check, token };
   });
 }
-export async function finishLease(check: Check, token: string) {
+export async function finishLease(check: Check, token: string, release = true) {
   check.updatedAt = new Date().toISOString();
-  delete check.leaseUntil;
-  delete check.leaseToken;
+  if (release) {
+    delete check.leaseUntil;
+    delete check.leaseToken;
+  }
   const db = database();
   if (db) {
     const { error } = await db.rpc("finish_check", {

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import QRCode from "qrcode";
@@ -8,11 +8,25 @@ import { configured, modelJSON, search } from "@/lib/integrations";
 import { factsSchema, buildFixes, verifyFactLock } from "@/lib/honesty";
 import { sampleCheck, examples } from "@/lib/examples";
 import { work, total } from "@/lib/pipeline";
+import { checkMode } from "@/lib/questions";
 import type { Candidate, Check, Fix } from "@/lib/types";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 const json = (data: unknown, status = 200) =>
   NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
+function startQuickInBackground(check: Check) {
+  if (check.mode === "quick") after(() => runAndCache(check.id));
+}
+async function runAndCache(id: string) {
+  await work(id);
+  const updated = await getRecord<Check>("checks", id);
+  if (updated?.status === "complete" && !updated.sample)
+    await saveRecord("cache", {
+      ...updated,
+      id: updated.businessId,
+      businessId: updated.id,
+    });
+}
 async function ownedCheck(id: string, identity: string) {
   const check = await getRecord<Check>("checks", id);
   if (!check || check.owner !== identity)
@@ -61,16 +75,24 @@ async function handler(
         .parse(await req.json());
       const sources = await search(
         `${input.name} ${input.city} official business address hours`,
+        { quick: true },
       );
       if (!sources.length)
         throw new Error(
           "No sources found. Try the exact business name and city.",
         );
       const result = await modelJSON(
-        "REASON",
-        "Identify the requested business from sources. Return {facts:{name,city,country,category,address,hours,knownFor,website,reviewUrl}}. All fields strings. Use empty string for unknown details. Never fabricate hours or review links. If identity is unclear, return {facts:null}.",
-        { input, sources },
+        "FAST",
+        "Identify the requested business from sources. Return {facts:{name,city,country,category,address,hours,knownFor,website,reviewUrl}}. All fields strings. Category must be a short everyday category such as Sweet Shop or Cafe, without addresses or specialty filters. Use empty string for unknown details. Never fabricate hours or review links. If identity is unclear, return {facts:null}.",
+        {
+          input,
+          sources: sources.map((s) => ({
+            ...s,
+            excerpt: s.excerpt.slice(0, 1200),
+          })),
+        },
         z.object({ facts: factsSchema.nullable() }),
+        { timeoutMs: 12000, maxTokens: 700, attempts: 1 },
       );
       if (!result.facts)
         throw new Error(
@@ -84,7 +106,11 @@ async function handler(
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
       };
       await saveRecord("candidates", candidate);
-      return json({ id: candidate.id });
+      return json({
+        id: candidate.id,
+        facts: candidate.facts,
+        sources: candidate.sources,
+      });
     }
     if (resource === "candidates" && req.method === "GET") {
       const candidate = await getRecord<Candidate>("candidates", id);
@@ -124,29 +150,31 @@ async function handler(
             })),
           }
         : sampleCheck(exampleId, identity);
-      // A real HTTP fetch records the fictional evidence pages, never live findings.
+      // Saved examples already contain dated, fictional source snapshots.
+      // Opening one must not wait for another HTTP round trip or pretend to
+      // refresh its evidence. The links still open the inspectable sample pages.
       check.questions = check.questions.map((q, i) => ({
         ...q,
         id: `${check.id}-q${i}`,
       }));
       const sampleOrigin =
-        process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+        process.env.NODE_ENV === "development"
+          ? "http://localhost:3000"
+          : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
       for (const source of check.sources) {
         const parsed = new URL(source.url);
         source.url = sampleOrigin + parsed.pathname + parsed.search;
-        const result = await fetch(source.url, {
-          signal: AbortSignal.timeout(10000),
-        });
-        if (!result.ok) throw new Error("Sample source unavailable.");
-        await result.text();
-        source.fetchedAt = new Date().toISOString();
       }
       await saveRecord("checks", check);
       return json({ id: check.id });
     }
     if (resource === "checks" && req.method === "POST" && !id) {
       const input = z
-        .object({ candidateId: z.string().uuid(), facts: factsSchema })
+        .object({
+          candidateId: z.string().uuid(),
+          facts: factsSchema,
+          mode: z.enum(["quick", "deep"]).default("quick"),
+        })
         .parse(await req.json());
       const candidate = await getRecord<Candidate>(
         "candidates",
@@ -160,7 +188,7 @@ async function handler(
         return json({ error: "Business details expired." }, 404);
       const now = new Date().toISOString();
       const cacheId = createHash("sha256")
-        .update(identity + JSON.stringify(input.facts))
+        .update(identity + input.mode + JSON.stringify(input.facts))
         .digest("hex");
       const cached = await getRecord<Check>("cache", cacheId);
       if (
@@ -178,14 +206,19 @@ async function handler(
         createdAt: now,
         updatedAt: now,
         sample: false,
+        mode: input.mode,
         status: "queued",
-        progress: "Asking the questions",
+        progress:
+          input.mode === "quick"
+            ? "Starting five everyday searches"
+            : "Starting your deep research",
         sources: candidate.sources,
         questions: [],
         findings: [],
         fixes: [],
       };
       await saveRecord("checks", check);
+      startQuickInBackground(check);
       return json({ id: check.id });
     }
     if (resource === "checks" && id) {
@@ -197,10 +230,26 @@ async function handler(
           leaseUntil: _leaseUntil,
           ...safe
         } = check;
-        return json(safe);
+        return json({
+          ...safe,
+          workerActive:
+            !!check.leaseUntil && Date.parse(check.leaseUntil) > Date.now(),
+        });
       }
-      if(req.method==='POST'&&action==='retry'){
-        const updated=await updateCheck(id,identity,c=>{if(c.status!=='error'||!c.retryStage||(c.retryCount||0)>=3)throw new Error('This check cannot be retried again. Start a new check.');c.retryCount=(c.retryCount||0)+1;c.status=c.retryStage;c.progress='Retrying the unfinished step';delete c.error;delete c.leaseToken;delete c.leaseUntil;});return json({id:updated.id});
+      if (req.method === "POST" && action === "retry") {
+        const updated = await updateCheck(id, identity, (c) => {
+          if (c.status !== "error" || !c.retryStage || (c.retryCount || 0) >= 3)
+            throw new Error(
+              "This check cannot be retried again. Start a new check.",
+            );
+          c.retryCount = (c.retryCount || 0) + 1;
+          c.status = c.retryStage;
+          c.progress = "Retrying the unfinished step";
+          delete c.error;
+          delete c.leaseToken;
+          delete c.leaseUntil;
+        });
+        return json({ id: updated.id });
       }
       if (req.method === "POST" && action === "weekly") {
         if (check.sample || check.status !== "complete")
@@ -220,15 +269,43 @@ async function handler(
         });
       }
       if (req.method === "POST" && action === "work") {
-        await work(check.id);
-        const updated = await getRecord<Check>("checks", check.id);
-        if (updated?.status === "complete" && !updated.sample)
-          await saveRecord("cache", {
-            ...updated,
-            id: updated.businessId,
-            businessId: updated.id,
-          });
+        await runAndCache(check.id);
         return json({ ok: true });
+      }
+      if (req.method === "POST" && action === "deepen") {
+        if (checkMode(check) !== "quick" || check.status !== "complete")
+          throw new Error(
+            "Finish your quick check before starting deep research.",
+          );
+        await quota(req);
+        const now = new Date().toISOString();
+        const next: Check = {
+          ...check,
+          id: randomUUID(),
+          businessId: createHash("sha256")
+            .update(identity + "deep" + JSON.stringify(check.facts))
+            .digest("hex"),
+          mode: "deep",
+          status: "queued",
+          createdAt: now,
+          updatedAt: now,
+          progress: "Preparing your deep research",
+          questions: [],
+          findings: [],
+          fixes: [],
+          previousTotal: undefined,
+          recheckOf: undefined,
+          weeklyEnabled: false,
+          nextRecheckAt: undefined,
+          latestRecheckId: undefined,
+          leaseToken: undefined,
+          leaseUntil: undefined,
+          error: undefined,
+          retryStage: undefined,
+          retryCount: 0,
+        };
+        await saveRecord("checks", next);
+        return json({ id: next.id });
       }
       if (req.method === "POST" && action === "recheck") {
         if (check.status !== "complete")
@@ -266,8 +343,12 @@ async function handler(
           latestRecheckId: undefined,
           leaseToken: undefined,
           leaseUntil: undefined,
+          retryStage: undefined,
+          retryCount: 0,
+          error: undefined,
         };
         await saveRecord("checks", next);
+        startQuickInBackground(next);
         return json({ id: next.id });
       }
     }

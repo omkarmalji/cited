@@ -17,6 +17,7 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 export const metadata: Metadata = {
+  icons: { icon: "/brand/cited-icon.png", apple: "/brand/cited-icon.png" },
   title: {
     default: "Cited | Does AI recommend your business?",
     template: "%s | Cited",

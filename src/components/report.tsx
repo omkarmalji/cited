@@ -1,59 +1,34 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowRight,
-  CheckCircle,
-  Circle,
-  CircleNotch,
-  ArrowClockwise,
-} from "@phosphor-icons/react";
+import { ArrowRight, ArrowClockwise } from "@phosphor-icons/react";
 import { Badge, Citation, Dots, RunMatrix, outlookColor } from "./ui";
 import { METHOD, type Check } from "@/lib/types";
 import { named, outlookCounts, sortQuestions } from "@/lib/outlook";
+import { checkMode, expectedAnswers, runsPerQuestion } from "@/lib/questions";
+import { useCheck } from "./use-check";
+import { CheckProgress } from "./check-progress";
 export function Report({ id }: { id: string }) {
-  const [check, setCheck] = useState<Check | null>(null),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false),
-    [retryVersion, setRetryVersion] = useState(0);
+  const { check, error: pollError, refresh } = useCheck(id);
+  const [error, setError] = useState(""),
+    [busy, setBusy] = useState(false);
   const router = useRouter();
-  useEffect(() => {
-    let stopped = false;
-    const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout>;
-    const poll = async () => {
-      try {
-        const r = await fetch(`/api/checks/${id}`, {
-          signal: controller.signal,
-        });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error);
-        if (stopped) return;
-        setCheck(data);
-        if (!["complete", "error"].includes(data.status)) {
-          const worker = await fetch(`/api/checks/${id}/work`, {
-            method: "POST",
-            signal: controller.signal,
-          });
-          if (!worker.ok) {
-            const d = await worker.json();
-            throw new Error(d.error);
-          }
-          timer = setTimeout(poll, 700);
-        }
-      } catch (e) {
-        if (!stopped && (e as Error).name !== "AbortError")
-          setError((e as Error).message);
-      }
-    };
-    poll();
-    return () => {
-      stopped = true;
-      controller.abort();
-      clearTimeout(timer);
-    };
-  }, [id, retryVersion]);
+  const deepen = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/checks/${id}/deepen`, {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      router.push(`/check/${data.id}`);
+    } catch (error) {
+      setError((error as Error).message);
+      setBusy(false);
+    }
+  };
   const recheck = async () => {
     setBusy(true);
     setError("");
@@ -71,7 +46,12 @@ export function Report({ id }: { id: string }) {
     return (
       <main id="main" className="app-container">
         <h1>Your visibility check.</h1>
-        <p role="status">{error || "Opening your report..."}</p>
+        <p role="status">{error || pollError || "Opening your report..."}</p>
+        {pollError && (
+          <button className="button" onClick={refresh}>
+            Reconnect
+          </button>
+        )}
         <a className="button" href="/#examples">
           Try an example
         </a>
@@ -81,17 +61,13 @@ export function Report({ id }: { id: string }) {
     .flatMap((q) => q.runs)
     .filter((r) => r.mentioned).length;
   const complete = check.status === "complete";
-  const questions = sortQuestions(check.questions);
+  const quick = checkMode(check) === "quick";
+  const answerTotal = expectedAnswers(check);
+  const repeats = runsPerQuestion(check);
+  const questions = quick ? check.questions : sortQuestions(check.questions);
   const best = questions.find((q) => q.status === "Winnable now");
   const approved = check.fixes.filter((f) => f.status === "approved").length;
   const rival = check.findings[0]?.rival;
-  const progress = ["questions", "runs"].includes(check.status)
-    ? 1
-    : ["diagnosis", "verifyDiagnosis"].includes(check.status)
-      ? 2
-      : ["fixes", "verifyFixes"].includes(check.status)
-        ? 3
-        : 0;
   return (
     <main id="main" className="app-container">
       <div className="app-topline">
@@ -104,7 +80,7 @@ export function Report({ id }: { id: string }) {
       <p className="report-meta">
         {check.facts.city}, {check.facts.country} ·{" "}
         {complete
-          ? `${check.sample ? "Saved example" : "Checked " + new Date(check.createdAt).toLocaleDateString("en", { month: "short", day: "numeric" })}, 8 questions, 5 runs each`
+          ? `${check.sample ? "Saved deep example" : quick ? "Quick snapshot" : "Deep research"}, ${quick ? "5 questions, 1 answer each" : "8 questions, 5 runs each"}`
           : "Your check is in progress"}
       </p>
       {check.sample && (
@@ -112,9 +88,14 @@ export function Report({ id }: { id: string }) {
           Fictional business. Saved results. Approved pages stay labeled.
         </p>
       )}
-      {error && (
+      {(error || pollError) && (
         <p className="error-message" role="alert">
-          {error}
+          {error || pollError}
+          {pollError && (
+            <button className="button" onClick={refresh}>
+              Reconnect
+            </button>
+          )}
         </p>
       )}
       {check.status === "error" ? (
@@ -125,6 +106,14 @@ export function Report({ id }: { id: string }) {
             Partial answers are not a complete score. No unsupported findings or
             fixes have been published.
           </p>
+          {check.questions.some((q) => q.runs.length) && (
+            <CheckProgress
+              check={check}
+              name={check.facts.name}
+              city={check.facts.city}
+              since={Date.parse(check.createdAt)}
+            />
+          )}
           {check.retryStage && (check.retryCount || 0) < 3 && (
             <button
               className="button strong"
@@ -139,7 +128,7 @@ export function Report({ id }: { id: string }) {
                     }),
                     data = await response.json();
                   if (!response.ok) throw new Error(data.error);
-                  setRetryVersion((v) => v + 1);
+                  refresh();
                 } catch (e) {
                   setError((e as Error).message);
                 }
@@ -154,79 +143,58 @@ export function Report({ id }: { id: string }) {
           </a>
         </div>
       ) : !complete ? (
-        <div className="panel">
-          <h2>A few questions. A clearer picture.</h2>
-          <ol className="progress-list">
-            {[
-              "Finding your business",
-              "Asking the questions",
-              "Reading sources",
-              "Writing fixes",
-            ].map((label, i) => (
-              <li
-                key={label}
-                className={
-                  i < progress ? "done" : i === progress ? "active" : ""
-                }
-              >
-                {i < progress ? (
-                  <CheckCircle size={20} />
-                ) : i === progress ? (
-                  <CircleNotch size={20} className="spinner" />
-                ) : (
-                  <Circle size={20} />
-                )}
-                <span>{label}</span>
-                <span
-                  className="mono"
-                  style={{ marginLeft: "auto", fontSize: 11 }}
-                >
-                  {i < progress
-                    ? "Complete"
-                    : i === progress
-                      ? "In progress"
-                      : "Waiting"}
-                </span>
-              </li>
-            ))}
-          </ol>
-          <p className="progress-note" role="status" aria-live="polite">
-            {check.progress}
-          </p>
+        <section className="panel">
+          <CheckProgress
+            check={check}
+            name={check.facts.name}
+            city={check.facts.city}
+            since={Date.parse(check.createdAt)}
+          />
           <p className="notice">
-            Forty independent answers take a few minutes. This page keeps your
-            check moving. You can return in this browser.
+            Your answers are saved as they finish. This report can be reopened
+            in this browser.
           </p>
-        </div>
+        </section>
       ) : (
         <>
           <section className="panel summary-panel">
             <div className="summary-score">
               <div className="fact-name">AI VISIBILITY</div>
               <div className="summary-count">
-                {count} <span>of 40 runs</span>
+                {count}{" "}
+                <span>
+                  of {answerTotal} {quick ? "answers" : "runs"}
+                </span>
               </div>
               <p>
-                Named in {count} of 40 answers across eight customer questions.
+                Named in {count} of {answerTotal} answers across{" "}
+                {quick ? "five everyday" : "eight customer"} questions.
               </p>
               {check.previousTotal !== undefined && (
                 <p className="mono">
                   {count - check.previousTotal >= 0 ? "Up" : "Down"}{" "}
                   {Math.abs(count - check.previousTotal)} since the previous
-                  check ({check.previousTotal} of 40).
+                  check ({check.previousTotal} of {answerTotal}).
                 </p>
               )}
             </div>
             <RunMatrix questions={questions} />
             <div className="summary-side">
-              <ul className="outlook-list" aria-label="Questions by outlook">
-                {outlookCounts(questions).map((o) => (
-                  <li key={o.status} className={outlookColor(o.status)}>
-                    <i aria-hidden="true" />
-                    {o.count} {o.status.toLowerCase()}
-                  </li>
-                ))}
-              </ul>
+              {quick ? (
+                <p className="snapshot-label">
+                  One pass per question.
+                  <br />A starting point, not a ranking prediction.
+                </p>
+              ) : (
+                <ul className="outlook-list" aria-label="Questions by outlook">
+                  {outlookCounts(questions).map((o) => (
+                    <li key={o.status} className={outlookColor(o.status)}>
+                      <i aria-hidden="true" />
+                      {o.count} {o.status.toLowerCase()}
+                    </li>
+                  ))}
+                </ul>
+              )}
               <button className="button" onClick={recheck} disabled={busy}>
                 <ArrowClockwise size={16} />
                 {busy ? "Starting..." : "Recheck now"}
@@ -236,14 +204,34 @@ export function Report({ id }: { id: string }) {
           <div className="next-move">
             <span className="fact-name">START HERE</span>
             <p>
-              {best
-                ? `“${best.text}” is winnable now, named in ${named(best)} of 5 runs. Approve your fix pack to strengthen it.`
-                : "No question is winnable right away. Niche questions are your best path, so start with your fix pack."}
+              {quick
+                ? count
+                  ? "You are appearing in everyday searches. Review your fact-only drafts to make your business easier to understand."
+                  : "Other businesses are being named. Start with a clear, accurate page about your business, then check again."
+                : best
+                  ? `“${best.text}” is winnable now, named in ${named(best)} of 5 runs. Approve your fix pack to strengthen it.`
+                  : "No question is winnable right away. Niche questions are your best path, so start with your fix pack."}
             </p>
             <a className="text-link" href="#fixes">
               Go to your fix pack <ArrowRight size={16} />
             </a>
           </div>
+          {quick && (
+            <section className="deep-invite">
+              <div>
+                <p className="eyebrow">Go deeper, when you want</p>
+                <h3>See what changes across repeated answers.</h3>
+                <p>
+                  8 questions, 40 answers, specialty searches and a verified
+                  rival diagnosis. Takes a few minutes. No payment.
+                </p>
+              </div>
+              <button className="button" onClick={deepen} disabled={busy}>
+                {busy ? "Starting research" : "Start deep research"}
+                <ArrowRight size={16} />
+              </button>
+            </section>
+          )}
           <nav className="report-nav" aria-label="Report sections">
             <a href="#questions">Questions</a>
             <a href="#why">{rival ? `Why ${rival} wins` : "Sources"}</a>
@@ -254,9 +242,9 @@ export function Report({ id }: { id: string }) {
           <section id="questions" className="report-section">
             <h2>What your customers might ask.</h2>
             <p className="section-note">
-              Most winnable first. Outlook labels are heuristics, not
-              guarantees. A niche question can be worth improving even with zero
-              mentions.
+              {quick
+                ? "Everyday category-and-city questions, in their original order. Each answer is a single sourced snapshot, not a prediction of future ranking."
+                : "Most winnable first. Outlook labels are heuristics, not guarantees. Deep research combines broad discovery with specialty questions."}
             </p>
             <div className="question-list">
               {questions.map((q) => (
@@ -266,11 +254,26 @@ export function Report({ id }: { id: string }) {
                     <h3>{q.text}</h3>
                   </div>
                   <div className="question-data">
-                    <Dots count={named(q)} />
-                    <Badge label={q.status} />
+                    <Dots count={named(q)} total={repeats} />
+                    {quick ? (
+                      <span
+                        className={
+                          named(q)
+                            ? "answer-ready snapshot-tag"
+                            : "snapshot-tag"
+                        }
+                      >
+                        {named(q) ? "Named" : "Not named"}
+                      </span>
+                    ) : (
+                      <Badge label={q.status} />
+                    )}
                   </div>
                   <details>
-                    <summary>View 5 answers</summary>
+                    <summary>
+                      View {q.runs.length}{" "}
+                      {q.runs.length === 1 ? "answer" : "answers"}
+                    </summary>
                     {q.runs.map((r) => (
                       <div className="run-answer" key={r.index}>
                         <span className="mono">
@@ -315,8 +318,9 @@ export function Report({ id }: { id: string }) {
               ))
             ) : (
               <p>
-                We could not support a rival explanation with sources. No
-                finding is shown.
+                {quick
+                  ? "Your quick check uses the search excerpts linked below. Choose deep research for full-page reading and an independently verified explanation of why rivals are being named."
+                  : "We could not support a rival explanation with sources. No finding is shown."}
               </p>
             )}
             <details className="sources">
@@ -467,8 +471,11 @@ function WeeklyRechecks({ check }: { check: Check }) {
     <section className="report-section panel">
       <h2>See what changes.</h2>
       <p>
-        Weekly rechecks ask the same eight questions again. Each report keeps
-        its sources and five-run counts.
+        Rechecks use the same{" "}
+        {check.mode === "quick"
+          ? "five everyday questions with one answer each"
+          : "eight questions with five runs each"}
+        . Each report keeps its sources for a fair comparison.
       </p>
       {check.latestRecheckId ? (
         <Link className="button" href={`/check/${check.latestRecheckId}`}>
