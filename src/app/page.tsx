@@ -120,22 +120,27 @@ export default function Home() {
             <Link className="hero-sample-link" href="/examples/brew-lane">
               See a saved deep report <ArrowUpRight size={14} />
             </Link>
-            <ul className="stat-cards cross-frame" data-enter>
-              {stats.map((s, i) => (
-                <li key={s.label}>
-                  <span className="stat-top">
-                    <span className="icon-box">
-                      <s.icon size={16} aria-hidden="true" />
-                    </span>
-                    {s.tag && <span className="stat-tag">{s.tag}</span>}
-                    <span className="stat-index">0{i + 1}</span>
-                  </span>
-                  <strong>{s.value}</strong>
-                  <span className="stat-label">{s.label}</span>
-                </li>
-              ))}
-            </ul>
           </div>
+        </section>
+        <section
+          className="container method-band"
+          aria-label="What every check includes"
+        >
+          <ul className="stat-cards cross-frame">
+            {stats.map((s, i) => (
+              <li key={s.label}>
+                <span className="stat-top">
+                  <span className="icon-box">
+                    <s.icon size={16} aria-hidden="true" />
+                  </span>
+                  {s.tag && <span className="stat-tag">{s.tag}</span>}
+                  <span className="stat-index">0{i + 1}</span>
+                </span>
+                <strong>{s.value}</strong>
+                <span className="stat-label">{s.label}</span>
+              </li>
+            ))}
+          </ul>
         </section>
         <Rule />
         <section className="manifesto container" data-reveal>
