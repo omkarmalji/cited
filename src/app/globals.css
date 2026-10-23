@@ -716,6 +716,9 @@ h1 span,
   width: 1px;
   background: var(--rail-color);
   pointer-events: none;
+  /* Animated by the load-in: rails draw downward from the top. */
+  transform: scaleY(var(--rail-scale, 1));
+  transform-origin: top;
 }
 .landing-page::before {
   left: var(--rail);

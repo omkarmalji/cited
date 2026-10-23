@@ -10,6 +10,8 @@ test("landing is accessible, responsive and has real arc canvas", async ({
   await expect(
     page.locator(".shader-frame canvas, .shader-frame iframe").first(),
   ).toBeVisible();
+  // The load-in reveals the background first, then the copy; audit after it.
+  await expect(page.locator('[data-intro="done"]')).toHaveCount(1);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,

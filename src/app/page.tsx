@@ -117,7 +117,11 @@ export default function Home() {
             <div className="hero-entry" data-enter>
               <CheckForm />
             </div>
-            <Link className="hero-sample-link" href="/examples/brew-lane">
+            <Link
+              className="hero-sample-link"
+              href="/examples/brew-lane"
+              data-enter
+            >
               See a saved deep report <ArrowUpRight size={14} />
             </Link>
           </div>
