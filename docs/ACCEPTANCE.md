@@ -1,28 +1,28 @@
 # Acceptance evidence
 
-Evidence collected on 2026-10-12, Node.js 22.16 and installed Chrome. Production origin: https://cited-lemon.vercel.app. Pending items below remain explicit.
+Evidence collected on 2026-10-12, Node.js 22.16 and installed Chrome. Production origin at the time: https://cited-lemon.vercel.app (the app now lives at https://cited-dev.vercel.app). Pending items below remain explicit.
 
-| Check | Evidence |
-| --- | --- |
-| Exact ThreeUI source | All 16 registered SHA-256 hashes match revision `fa86582fc870`; canvas rendered in Chrome |
-| Production build | Next.js 16.4.0 compilation and TypeScript passed |
-| Scoring, fact locks, PostgreSQL and public-page invariants | 16 tests passed: scoring, fact locks, leases, owner transfer, quotas, completed counts, citations, weekly idempotency, server-rendered JSON-LD, script escaping, approval gate and fictional-page noindex/schema omission |
-| Desktop and mobile flows | All 8 Playwright cases passed together against the latest public production release |
-| Accessibility | Production landing and sample report Lighthouse accessibility 100; production axe found no violations in landing and zero-result report. Citation accessible names corrected; fresh report Lighthouse has no failed audits |
-| Provider inference | Nano, Super, Ultra all returned validated JSON through Token Factory |
-| Web retrieval | Tavily Search and Extract returned 5 fetched sources |
-| Saved examples | 4 fictional businesses across US, UK, Australia, Canada; provider-free sample flow verified |
-| Deployment | Vercel production deployment READY; anonymous landing, design page and sample-report route returned HTTP 200 |
-| Supabase | Dedicated Cited schema applied; all 10 tables RLS enabled; 4 examples seeded. Live constraints rejected empty/missing citations; anonymous records and privileged quota RPC denied |
-| Review QR and schema approval | Production API checks on an isolated fictional fixture: QR unavailable before approval, valid PNG after approval, outsider denied; changed schema facts rejected, restored schema approved, approved edits locked. The QA fixture alone received a confirmed authored demo URL; ordinary examples do not invent review links |
+| Check                                                      | Evidence                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Exact ThreeUI source                                       | All 16 registered SHA-256 hashes match revision `fa86582fc870`; canvas rendered in Chrome                                                                                                                                                                                                                                    |
+| Production build                                           | Next.js 16.4.0 compilation and TypeScript passed                                                                                                                                                                                                                                                                             |
+| Scoring, fact locks, PostgreSQL and public-page invariants | 16 tests passed: scoring, fact locks, leases, owner transfer, quotas, completed counts, citations, weekly idempotency, server-rendered JSON-LD, script escaping, approval gate and fictional-page noindex/schema omission                                                                                                    |
+| Desktop and mobile flows                                   | All 8 Playwright cases passed together against the latest public production release                                                                                                                                                                                                                                          |
+| Accessibility                                              | Production landing and sample report Lighthouse accessibility 100; production axe found no violations in landing and zero-result report. Citation accessible names corrected; fresh report Lighthouse has no failed audits                                                                                                   |
+| Provider inference                                         | Nano, Super, Ultra all returned validated JSON through Token Factory                                                                                                                                                                                                                                                         |
+| Web retrieval                                              | Tavily Search and Extract returned 5 fetched sources                                                                                                                                                                                                                                                                         |
+| Saved examples                                             | 4 fictional businesses across US, UK, Australia, Canada; provider-free sample flow verified                                                                                                                                                                                                                                  |
+| Deployment                                                 | Vercel production deployment READY; anonymous landing, design page and sample-report route returned HTTP 200                                                                                                                                                                                                                 |
+| Supabase                                                   | Dedicated Cited schema applied; all 10 tables RLS enabled; 4 examples seeded. Live constraints rejected empty/missing citations; anonymous records and privileged quota RPC denied                                                                                                                                           |
+| Review QR and schema approval                              | Production API checks on an isolated fictional fixture: QR unavailable before approval, valid PNG after approval, outsider denied; changed schema facts rejected, restored schema approved, approved edits locked. The QA fixture alone received a confirmed authored demo URL; ordinary examples do not invent review links |
 
 Three real provider checks completed in local persistence after retrying unfinished workers. A separate production HTTP run then completed all three with no retries, using deployed Nebius/Tavily calls and Supabase persistence:
 
-| Business/city | Mentions | Fetched sources | Supported findings | Verified unapproved drafts |
-| --- | --- | --- | --- | --- |
-| Monmouth Coffee Company, London | 11 of 40 | 39 | 0 | 4 |
-| Schorem Haarsnijder en Barbier, Rotterdam | 0 of 40 | 32 | 5 | 4 |
-| Bicycle Habitat, New York | 9 of 40 | 39 | 1 | 4 |
+| Business/city                             | Mentions | Fetched sources | Supported findings | Verified unapproved drafts |
+| ----------------------------------------- | -------- | --------------- | ------------------ | -------------------------- |
+| Monmouth Coffee Company, London           | 11 of 40 | 39              | 0                  | 4                          |
+| Schorem Haarsnijder en Barbier, Rotterdam | 0 of 40  | 32              | 5                  | 4                          |
+| Bicycle Habitat, New York                 | 9 of 40  | 39              | 1                  | 4                          |
 
 Each stored eight questions with five nonempty, model-attributed answers. Every displayed finding references existing fetched sources. London had no finding surviving independent evidence verification; the report does not fabricate one. Results differ between checks, as expected. No real-business fixes were approved or published by the acceptance script.
 

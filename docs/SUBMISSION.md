@@ -4,7 +4,7 @@ Status: reviewable draft. No Devpost entry or feedback has been submitted. The o
 
 ## Links and track
 
-- App: https://cited-lemon.vercel.app
+- App: https://cited-dev.vercel.app
 - Public MIT repository: https://github.com/omkarmalji/cited
 - Video: local narrated export, 177.44 seconds; public YouTube URL pending.
 - Proposed track: Best Apps and Agents. Tavily Search and Extract are functional runtime integrations.

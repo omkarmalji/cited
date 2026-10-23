@@ -14,7 +14,7 @@ Description:
 >
 > This video demonstrates a visibly fictional saved example. Scores come from Nemotron with web search, not live ChatGPT results.
 >
-> Try Cited: https://cited-lemon.vercel.app
+> Try Cited: https://cited-dev.vercel.app
 >
 > Public MIT source: https://github.com/omkarmalji/cited
 >

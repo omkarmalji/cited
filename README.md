@@ -4,7 +4,7 @@ Customers ask AI who to visit. Does it say you?
 
 Cited gives local businesses a fast, sourced AI visibility snapshot: five everyday searches, live answers, and fact-only drafts the owner reviews. Optional deep research adds eight questions, forty answers, cited rival explanations and independent verification. Built for the Nebius x NVIDIA Global AI Hackathon.
 
-Live demo: [cited-lemon.vercel.app](https://cited-lemon.vercel.app). Four fictional examples work without signup or provider keys. Live checks use Nebius Token Factory, Tavily and a dedicated Supabase database.
+Live demo: [cited-dev.vercel.app](https://cited-dev.vercel.app). Four fictional examples work without signup or provider keys. Live checks use Nebius Token Factory, Tavily and a dedicated Supabase database.
 
 Video: refreshed narrated demo exported locally at 2:57; public YouTube publishing is on hold at the owner's request. Script: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
 
