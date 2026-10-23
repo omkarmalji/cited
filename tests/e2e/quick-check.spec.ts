@@ -103,38 +103,36 @@ test("quick check opens immediately, streams results while worker runs, and stay
     page.getByRole("heading", { name: "Finding your business" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Right business?" }),
+    page.getByRole("heading", { name: "Is this your business?" }),
   ).toBeVisible();
   expect(lookupCalls).toBe(1);
-  await page
-    .getByRole("button", { name: "Confirm and run 5 searches" })
-    .click();
+  await page.getByRole("button", { name: "Yes, that's my business" }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "2 of 5 questions answered" }),
   ).toBeVisible();
   expect(working).toBe(true);
   await expect(
-    page.getByText("Brew Lane Cafe was named", { exact: true }),
+    page.getByText("You're mentioned", { exact: true }),
   ).toBeVisible();
   expect(new URL(page.url()).pathname).toBe("/");
   const audit = await new AxeBuilder({ page }).analyze();
   expect(audit.violations).toEqual([]);
   await expect(
-    page.getByRole("heading", { name: "Named in 1 of 5 answers." }),
+    page.getByRole("heading", {
+      name: "AI mentioned you in 1 of 5 searches.",
+    }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Review your fix pack" }),
+    page.getByRole("link", { name: "See what to do next" }),
   ).toHaveAttribute("href", `/check/${id}#fixes`);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await page
-    .getByRole("dialog")
-    .screenshot({
-      path: `test-results/${info.project.name}-quick-results.png`,
-    });
+  await page.getByRole("dialog").screenshot({
+    path: `test-results/${info.project.name}-quick-results.png`,
+  });
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(

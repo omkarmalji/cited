@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, PencilSimple } from "@phosphor-icons/react";
-import { Citation } from "./ui";
+import { BusinessMatch } from "./business-match";
 import { CheckProgress } from "./check-progress";
 import { FACT_LABELS, type Facts, type Source } from "@/lib/types";
 const labels = FACT_LABELS;
@@ -33,9 +33,10 @@ export function Confirm({ id }: { id: string }) {
       <a href="/#check" className="back-link">
         Back to check
       </a>
-      <h1>Is this you?</h1>
+      <h1>Is this your business?</h1>
       <p>
-        Confirm every detail. These become the only facts your fix pack can use.
+        Check the details we found. We only use what you confirm here when we
+        write anything for you.
       </p>
       {error && (
         <p role="alert" className="error-message">
@@ -64,49 +65,36 @@ export function Confirm({ id }: { id: string }) {
             }
           }}
         >
-          <div className="fact-grid">
-            {Object.entries(facts).map(([key, value]) => (
-              <div key={key} className={key === "knownFor" ? "full" : ""}>
-                {edit ? (
-                  <>
-                    <label htmlFor={key}>{labels[key as keyof Facts]}</label>
-                    <input
-                      id={key}
-                      value={value}
-                      type={
-                        ["website", "reviewUrl"].includes(key) ? "url" : "text"
-                      }
-                      required={["name", "city", "category"].includes(key)}
-                      onChange={(e) =>
-                        setFacts({ ...facts, [key]: e.target.value })
-                      }
-                    />
-                  </>
-                ) : (
-                  <>
-                    <div className="fact-name">
-                      {labels[key as keyof Facts]}
-                    </div>
-                    <div className="fact-value">
-                      {value || "Not found. Add only if you can confirm it."}
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="citation-list">
-            {sources.map((s) => (
-              <Citation key={s.id} source={s} />
-            ))}
-          </div>
+          {edit ? (
+            <div className="fact-grid">
+              {Object.entries(facts).map(([key, value]) => (
+                <div key={key} className={key === "knownFor" ? "full" : ""}>
+                  <label htmlFor={key}>{labels[key as keyof Facts]}</label>
+                  <input
+                    id={key}
+                    value={value}
+                    placeholder="Leave blank if unsure"
+                    type={
+                      ["website", "reviewUrl"].includes(key) ? "url" : "text"
+                    }
+                    required={["name", "city", "category"].includes(key)}
+                    onChange={(e) =>
+                      setFacts({ ...facts, [key]: e.target.value })
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <BusinessMatch facts={facts} sources={sources} />
+          )}
           <p className="notice">
-            Unknown details stay blank. Add a verified review link now to create
-            your printable QR card.
+            Missing details stay blank. Adding your review link lets us make a
+            printable QR card for your counter.
           </p>
           <div className="action-row">
             <button type="submit" className="button strong" disabled={busy}>
-              {busy ? "Starting check" : "Yes, this is me"}{" "}
+              {busy ? "Starting" : "Yes, that's my business"}{" "}
               <ArrowRight size={16} />
             </button>
             <button
@@ -115,7 +103,7 @@ export function Confirm({ id }: { id: string }) {
               onClick={() => setEdit(!edit)}
             >
               <PencilSimple size={16} />
-              {edit ? "Done editing" : "Fix a detail"}
+              {edit ? "Done editing" : "Something's wrong, let me fix it"}
             </button>
           </div>
         </form>
@@ -123,7 +111,7 @@ export function Confirm({ id }: { id: string }) {
         !error && (
           <CheckProgress
             name="Your business"
-            city="Confirming public details"
+            city="getting your details"
             since={started}
             phase="lookup"
           />

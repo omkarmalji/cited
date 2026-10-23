@@ -2,13 +2,40 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, ArrowClockwise } from "@phosphor-icons/react";
-import { Badge, Citation, Dots, RunMatrix, outlookColor } from "./ui";
+import {
+  ArrowRight,
+  ArrowClockwise,
+  Check as CheckIcon,
+} from "@phosphor-icons/react";
+import { Badge, Citation, RunMatrix } from "./ui";
 import { METHOD, type Check } from "@/lib/types";
-import { named, outlookCounts, sortQuestions } from "@/lib/outlook";
+import { named, rivals, sortQuestions, verdict } from "@/lib/outlook";
 import { checkMode, expectedAnswers, runsPerQuestion } from "@/lib/questions";
 import { useCheck } from "./use-check";
 import { CheckProgress } from "./check-progress";
+// Owner-facing names. Fix types stay technical in code and drafts.
+const PLAIN_FIXES = {
+  page: {
+    title: "Publish a simple page about your business",
+    why: "AI tools read pages like this. We wrote it from your details. You check it, then publish with one click.",
+    time: "About 2 minutes",
+  },
+  profile: {
+    title: "Update your Google Business Profile",
+    why: "Copy and paste a ready description, 3 posts and 5 questions with answers into your Google listing.",
+    time: "About 10 minutes",
+  },
+  reviews: {
+    title: "Ask happy customers for a review",
+    why: "Ready messages for WhatsApp, SMS and email, plus a QR card you can print for your counter.",
+    time: "About 5 minutes",
+  },
+  schema: {
+    title: "Send this to whoever runs your website",
+    why: "A small piece of code that helps AI understand your site. Just forward it, no need to understand it.",
+    time: "About 1 minute",
+  },
+} as const;
 export function Report({ id }: { id: string }) {
   const { check, error: pollError, refresh } = useCheck(id);
   const [error, setError] = useState(""),
@@ -45,8 +72,8 @@ export function Report({ id }: { id: string }) {
   if (!check)
     return (
       <main id="main" className="app-container">
-        <h1>Your visibility check.</h1>
-        <p role="status">{error || pollError || "Opening your report..."}</p>
+        <h1>Your AI check</h1>
+        <p role="status">{error || pollError || "Opening your report…"}</p>
         {pollError && (
           <button className="button" onClick={refresh}>
             Reconnect
@@ -65,7 +92,7 @@ export function Report({ id }: { id: string }) {
   const answerTotal = expectedAnswers(check);
   const repeats = runsPerQuestion(check);
   const questions = quick ? check.questions : sortQuestions(check.questions);
-  const best = questions.find((q) => q.status === "Winnable now");
+  const others = rivals(check);
   const approved = check.fixes.filter((f) => f.status === "approved").length;
   const rival = check.findings[0]?.rival;
   return (
@@ -80,8 +107,10 @@ export function Report({ id }: { id: string }) {
       <p className="report-meta">
         {check.facts.city}, {check.facts.country} ·{" "}
         {complete
-          ? `${check.sample ? "Saved deep example" : quick ? "Quick snapshot" : "Deep research"}, ${quick ? "5 questions, 1 answer each" : "8 questions, 5 runs each"}`
-          : "Your check is in progress"}
+          ? check.sample
+            ? "Saved example"
+            : `Checked ${new Date(check.createdAt).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" })}`
+          : "Check in progress"}
       </p>
       {check.sample && (
         <p className="notice sample">
@@ -103,8 +132,7 @@ export function Report({ id }: { id: string }) {
           <h2>We couldn’t finish this check.</h2>
           <p role="alert">{check.error}</p>
           <p className="notice">
-            Partial answers are not a complete score. No unsupported findings or
-            fixes have been published.
+            The answers we did get are saved below. Nothing was published.
           </p>
           {check.questions.some((q) => q.runs.length) && (
             <CheckProgress
@@ -135,7 +163,7 @@ export function Report({ id }: { id: string }) {
                 setBusy(false);
               }}
             >
-              {busy ? "Retrying..." : "Retry unfinished step"}
+              {busy ? "Trying again..." : "Try again"}
             </button>
           )}
           <a className="button" href="/#check">
@@ -151,144 +179,222 @@ export function Report({ id }: { id: string }) {
             since={Date.parse(check.createdAt)}
           />
           <p className="notice">
-            Your answers are saved as they finish. This report can be reopened
-            in this browser.
+            You can leave this page. Answers are saved as they arrive, and this
+            report opens again on this device.
           </p>
         </section>
       ) : (
         <>
-          <section className="panel summary-panel">
-            <div className="summary-score">
-              <div className="fact-name">AI VISIBILITY</div>
-              <div className="summary-count">
-                {count}{" "}
-                <span>
-                  of {answerTotal} {quick ? "answers" : "runs"}
-                </span>
-              </div>
-              <p>
-                Named in {count} of {answerTotal} answers across{" "}
-                {quick ? "five everyday" : "eight customer"} questions.
+          <section className="panel verdict">
+            <p className="fact-name">
+              {check.sample
+                ? "Saved example result"
+                : quick
+                  ? "Quick check result"
+                  : "Deep research result"}
+            </p>
+            <h2 className="verdict-title">
+              AI mentioned you in <span className="summary-count">{count}</span>{" "}
+              of {answerTotal} {quick ? "searches" : "answers"}.
+            </h2>
+            <p className="verdict-text">
+              {verdict(count, answerTotal, check.facts.name)}
+            </p>
+            {quick ? (
+              <span
+                className="verdict-dots"
+                role="img"
+                aria-label={`Mentioned in ${count} of ${answerTotal} searches`}
+              >
+                {check.questions.map((q) => (
+                  <i key={q.id} className={named(q) ? "filled" : ""} />
+                ))}
+              </span>
+            ) : (
+              <RunMatrix questions={questions} />
+            )}
+            {check.previousTotal !== undefined && (
+              <p className="mono verdict-trend">
+                {count - check.previousTotal >= 0 ? "Up" : "Down"}{" "}
+                {Math.abs(count - check.previousTotal)} since the previous check
+                ({check.previousTotal} of {answerTotal}).
               </p>
-              {check.previousTotal !== undefined && (
-                <p className="mono">
-                  {count - check.previousTotal >= 0 ? "Up" : "Down"}{" "}
-                  {Math.abs(count - check.previousTotal)} since the previous
-                  check ({check.previousTotal} of {answerTotal}).
-                </p>
-              )}
-            </div>
-            <RunMatrix questions={questions} />
-            <div className="summary-side">
-              {quick ? (
-                <p className="snapshot-label">
-                  One pass per question.
-                  <br />A starting point, not a ranking prediction.
-                </p>
-              ) : (
-                <ul className="outlook-list" aria-label="Questions by outlook">
-                  {outlookCounts(questions).map((o) => (
-                    <li key={o.status} className={outlookColor(o.status)}>
-                      <i aria-hidden="true" />
-                      {o.count} {o.status.toLowerCase()}
-                    </li>
-                  ))}
-                </ul>
-              )}
+            )}
+            <div className="verdict-actions">
+              <a className="button strong" href="#fixes">
+                See what to do next <ArrowRight size={16} />
+              </a>
               <button className="button" onClick={recheck} disabled={busy}>
                 <ArrowClockwise size={16} />
                 {busy ? "Starting..." : "Recheck now"}
               </button>
             </div>
           </section>
-          <div className="next-move">
-            <span className="fact-name">START HERE</span>
-            <p>
-              {quick
-                ? count
-                  ? "You are appearing in everyday searches. Review your fact-only drafts to make your business easier to understand."
-                  : "Other businesses are being named. Start with a clear, accurate page about your business, then check again."
-                : best
-                  ? `“${best.text}” is winnable now, named in ${named(best)} of 5 runs. Approve your fix pack to strengthen it.`
-                  : "No question is winnable right away. Niche questions are your best path, so start with your fix pack."}
+          {others.length > 0 && (
+            <section id="why" className="report-section">
+              <h2>Who AI suggests instead</h2>
+              <p className="section-note">
+                These are the businesses AI named when customers asked. They
+                show what AI can easily find about a business like yours.
+              </p>
+              <ol className="rival-list">
+                {others.map((r, i) => (
+                  <li key={r.name}>
+                    <span className="rival-rank">{i + 1}</span>
+                    <strong>{r.name}</strong>
+                    {r.count > 0 && (
+                      <span>
+                        named in {r.count} of {answerTotal}{" "}
+                        {quick ? "searches" : "answers"}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+              {check.findings.length > 0 && (
+                <div className="why-box">
+                  <h3>Why AI picks {rival}</h3>
+                  {check.findings.map((f, i) => (
+                    <div className="finding" key={i}>
+                      <p>{f.body}</p>
+                      <div className="citation-list">
+                        {f.citationIds
+                          .map((id) => check.sources.find((s) => s.id === id))
+                          .filter(Boolean)
+                          .map((s) => (
+                            <Citation key={s!.id} source={s!} />
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+          <section id="fixes" className="report-section">
+            <div className="section-title-row">
+              <h2>What to do next</h2>
+              <span className="mono">
+                {approved} of {check.fixes.length} done
+              </span>
+            </div>
+            <p className="section-note">
+              We already wrote these for you, using only the details you
+              confirmed. Open each one, change anything you like, then use it.
             </p>
-            <a className="text-link" href="#fixes">
-              Go to your fix pack <ArrowRight size={16} />
-            </a>
-          </div>
+            <ol className="todo-list">
+              {check.fixes.map((f, i) => {
+                const plain = PLAIN_FIXES[f.type],
+                  done = f.status === "approved";
+                return (
+                  <li
+                    className={done ? "fix-item done" : "fix-item"}
+                    key={f.id}
+                  >
+                    <span className="todo-step" aria-hidden="true">
+                      {done ? <CheckIcon size={16} weight="bold" /> : i + 1}
+                    </span>
+                    <div className="fix-copy">
+                      <h3>{plain.title}</h3>
+                      <p>{plain.why}</p>
+                      <span className="todo-time">
+                        {done ? "Done" : plain.time}
+                      </span>
+                      {f.flags.length > 0 && (
+                        <p className="error-message">
+                          One detail needs your check before you can use this.
+                        </p>
+                      )}
+                    </div>
+                    <div className="action-row">
+                      <Link
+                        className={done ? "button" : "button strong"}
+                        href={`/fix/${f.id}?check=${id}`}
+                      >
+                        {done ? "View" : "Review and use"}{" "}
+                        <ArrowRight size={16} />
+                      </Link>
+                      {f.slug && (
+                        <Link href={`/p/${f.slug}`} className="text-link">
+                          See your page <ArrowRight size={16} />
+                        </Link>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
           {quick && (
             <section className="deep-invite">
               <div>
-                <p className="eyebrow">Go deeper, when you want</p>
-                <h3>See what changes across repeated answers.</h3>
+                <p className="eyebrow">Want a closer look?</p>
+                <h3>Ask more questions, more times.</h3>
                 <p>
-                  8 questions, 40 answers, specialty searches and a verified
-                  rival diagnosis. Takes a few minutes. No payment.
+                  AI answers change from one try to the next. Deep research asks
+                  8 questions 5 times each and explains why AI picks other
+                  businesses. Takes a few minutes. Still free.
                 </p>
               </div>
               <button className="button" onClick={deepen} disabled={busy}>
-                {busy ? "Starting research" : "Start deep research"}
+                {busy ? "Starting" : "Start deep research"}
                 <ArrowRight size={16} />
               </button>
             </section>
           )}
-          <nav className="report-nav" aria-label="Report sections">
-            <a href="#questions">Questions</a>
-            <a href="#why">{rival ? `Why ${rival} wins` : "Sources"}</a>
-            <a href="#fixes">
-              Fix pack · {approved} of {check.fixes.length} approved
-            </a>
-          </nav>
           <section id="questions" className="report-section">
-            <h2>What your customers might ask.</h2>
+            <h2>What customers asked AI</h2>
             <p className="section-note">
               {quick
-                ? "Everyday category-and-city questions, in their original order. Each answer is a single sourced snapshot, not a prediction of future ranking."
-                : "Most winnable first. Outlook labels are heuristics, not guarantees. Deep research combines broad discovery with specialty questions."}
+                ? "We asked AI these everyday questions, once each."
+                : "We asked each question 5 times, because AI answers change."}{" "}
+              Open any question to see exactly what AI said and where it found
+              it.
             </p>
             <div className="question-list">
               {questions.map((q) => (
                 <article key={q.id} className="question-row">
-                  <div>
-                    <span className="question-kind mono">{q.kind}</span>
-                    <h3>{q.text}</h3>
-                  </div>
+                  <h3>{q.text}</h3>
                   <div className="question-data">
-                    <Dots count={named(q)} total={repeats} />
-                    {quick ? (
-                      <span
-                        className={
-                          named(q)
-                            ? "answer-ready snapshot-tag"
-                            : "snapshot-tag"
-                        }
-                      >
-                        {named(q) ? "Named" : "Not named"}
-                      </span>
-                    ) : (
-                      <Badge label={q.status} />
-                    )}
+                    <span
+                      className={
+                        named(q) ? "answer-ready snapshot-tag" : "snapshot-tag"
+                      }
+                    >
+                      {quick
+                        ? named(q)
+                          ? "You're mentioned"
+                          : "Not mentioned"
+                        : `Mentioned ${named(q)} of ${repeats} times`}
+                    </span>
+                    {!quick && <Badge label={q.status} />}
                   </div>
                   <details>
-                    <summary>
-                      View {q.runs.length}{" "}
-                      {q.runs.length === 1 ? "answer" : "answers"}
-                    </summary>
+                    <summary>What AI said</summary>
                     {q.runs.map((r) => (
                       <div className="run-answer" key={r.index}>
-                        <span className="mono">
-                          Run {r.index + 1} ·{" "}
-                          {r.mentioned ? "Named" : "Not named"}
-                        </span>
+                        {!quick && (
+                          <span className="mono">
+                            Try {r.index + 1} ·{" "}
+                            {r.mentioned
+                              ? "mentioned you"
+                              : "did not mention you"}
+                          </span>
+                        )}
                         <p>{r.answer}</p>
-                        <div className="citation-list">
-                          {(r.citationIds || [])
-                            .map((id) => check.sources.find((s) => s.id === id))
-                            .filter(Boolean)
-                            .map((s) => (
-                              <Citation key={s!.id} source={s!} />
-                            ))}
-                        </div>
+                        {(r.citationIds || []).length > 0 && (
+                          <div className="citation-list">
+                            <span className="citation-label">Found on</span>
+                            {(r.citationIds || [])
+                              .map((id) =>
+                                check.sources.find((s) => s.id === id),
+                              )
+                              .filter(Boolean)
+                              .map((s) => (
+                                <Citation key={s!.id} source={s!} />
+                              ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </details>
@@ -296,108 +402,31 @@ export function Report({ id }: { id: string }) {
               ))}
             </div>
           </section>
-          <section id="why" className="report-section panel">
-            <h2>
-              {check.findings[0]
-                ? `Why ${check.findings[0].rival} wins.`
-                : "What the sources tell us."}
-            </h2>
-            {check.findings.length ? (
-              check.findings.map((f, i) => (
-                <article className="finding" key={i}>
-                  <p>{f.body}</p>
-                  <div className="citation-list">
-                    {f.citationIds
-                      .map((id) => check.sources.find((s) => s.id === id))
-                      .filter(Boolean)
-                      .map((s) => (
-                        <Citation key={s!.id} source={s!} />
-                      ))}
-                  </div>
-                </article>
-              ))
-            ) : (
-              <p>
-                {quick
-                  ? "Your quick check uses the search excerpts linked below. Choose deep research for full-page reading and an independently verified explanation of why rivals are being named."
-                  : "We could not support a rival explanation with sources. No finding is shown."}
-              </p>
-            )}
-            <details className="sources">
-              <summary>All {check.sources.length} sources</summary>
-              {check.sources.map((s) => (
-                <div key={s.id} style={{ marginTop: 16 }}>
-                  <Citation source={s} />
-                  <p>
-                    {s.title} · Fetched{" "}
-                    {new Date(s.fetchedAt).toLocaleDateString()}
-                  </p>
-                </div>
-              ))}
-            </details>
-          </section>
-          <section id="fixes" className="report-section">
-            <div className="section-title-row">
-              <h2>Your fix pack.</h2>
-              <span className="mono">
-                {approved} of {check.fixes.length} approved
-              </span>
-            </div>
-            <p className="section-note">
-              Drafts use only your confirmed facts. Approve each one before
-              copying or publishing.
-            </p>
-            <div className="fix-list">
-              {check.fixes.map((f) => (
-                <article className="panel fix-item" key={f.id}>
-                  <div className="fix-copy">
-                    <div className="fix-title">
-                      <h3>{f.title}</h3>
-                      <Badge
-                        label={
-                          f.status === "approved"
-                            ? "Approved"
-                            : f.status === "edited"
-                              ? "Edited"
-                              : "Draft"
-                        }
-                      />
-                    </div>
-                    <p>
-                      {f.type === "page"
-                        ? "A hosted page built from your confirmed facts."
-                        : f.type === "profile"
-                          ? "A description, three posts, five Q&A pairs."
-                          : f.type === "reviews"
-                            ? "SMS, WhatsApp, email and your printable QR card."
-                            : "Structured business data for your website."}
-                    </p>
-                    {f.flags.length > 0 && (
-                      <p className="error-message">
-                        Needs a fact check before approval.
-                      </p>
-                    )}
-                  </div>
-                  <div className="action-row">
-                    <Link className="button" href={`/fix/${f.id}?check=${id}`}>
-                      {f.status === "approved"
-                        ? "View approved fix"
-                        : "Edit and approve"}{" "}
-                      <ArrowRight size={16} />
-                    </Link>
-                    {f.slug && (
-                      <Link href={`/p/${f.slug}`} className="text-link">
-                        View page <ArrowRight size={16} />
-                      </Link>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
           <WeeklyRechecks check={check} />
           <SaveReport checkId={id} />
-          <p className="method-note mono">{METHOD}</p>
+          <details className="how-checked">
+            <summary>How we checked</summary>
+            <p>
+              We asked NVIDIA Nemotron AI the questions above, with live web
+              search through Tavily, the way a customer might ask an AI
+              assistant. {METHOD}
+            </p>
+            {!quick && (
+              <p>
+                Outlook labels such as “Winnable now” are our best estimate, not
+                a guarantee.
+              </p>
+            )}
+            <p>
+              Every claim links to a page we read. All {check.sources.length}{" "}
+              sources:
+            </p>
+            <div className="citation-list">
+              {check.sources.map((s) => (
+                <Citation key={s.id} source={s} />
+              ))}
+            </div>
+          </details>
         </>
       )}
     </main>
@@ -411,11 +440,12 @@ function SaveReport({ checkId }: { checkId: string }) {
     <section className="report-section">
       <details className="panel report-option">
         <summary>
-          <h2>Keep your report.</h2>
+          <h2>Keep this report</h2>
           <span>Optional</span>
         </summary>
         <p style={{ fontSize: 14, marginBottom: 20 }}>
-          Optional magic-link login. Your first check never needs an account.
+          We&apos;ll email you a link so you can open it on any device. No
+          password needed.
         </p>
         <form
           onSubmit={async (e) => {
@@ -436,7 +466,7 @@ function SaveReport({ checkId }: { checkId: string }) {
             setBusy(false);
           }}
         >
-          <label htmlFor="save-email">Email address</label>
+          <label htmlFor="save-email">Your email</label>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <input
               style={{ flex: "1 1 240px" }}
@@ -448,7 +478,7 @@ function SaveReport({ checkId }: { checkId: string }) {
               autoComplete="email"
             />
             <button className="button" disabled={busy}>
-              {busy ? "Sending..." : "Send login link"}
+              {busy ? "Sending..." : "Email me a link"}
             </button>
           </div>
           {message && (
@@ -469,17 +499,14 @@ function WeeklyRechecks({ check }: { check: Check }) {
   if (check.sample) return null;
   return (
     <section className="report-section panel">
-      <h2>See what changes.</h2>
+      <h2>Check again every week</h2>
       <p>
-        Rechecks use the same{" "}
-        {check.mode === "quick"
-          ? "five everyday questions with one answer each"
-          : "eight questions with five runs each"}
-        . Each report keeps its sources for a fair comparison.
+        We repeat the same questions each week, so you can see whether your
+        updates are working.
       </p>
       {check.latestRecheckId ? (
         <Link className="button" href={`/check/${check.latestRecheckId}`}>
-          View latest weekly report <ArrowRight size={16} />
+          See this week&apos;s result <ArrowRight size={16} />
         </Link>
       ) : (
         <>
@@ -510,13 +537,13 @@ function WeeklyRechecks({ check }: { check: Check }) {
             {busy
               ? "Saving..."
               : enabled
-                ? "Stop weekly rechecks"
-                : "Enable weekly rechecks"}
+                ? "Turn off weekly checks"
+                : "Turn on weekly checks"}
           </button>
           {enabled && date && (
             <p role="status" className="notice">
-              Next recheck on or after {new Date(date).toLocaleDateString()}.
-              Results appear here and in your saved reports.
+              Next check on or after {new Date(date).toLocaleDateString()}. The
+              result will show up here.
             </p>
           )}
         </>

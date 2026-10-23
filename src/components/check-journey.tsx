@@ -1,12 +1,26 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, X } from "@phosphor-icons/react";
+import { ArrowRight, Check, PencilSimple, X } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import { FACT_LABELS, type Candidate, type Facts } from "@/lib/types";
+import type { Candidate, Facts } from "@/lib/types";
+import { broadQuestions } from "@/lib/questions";
+import { rivals, verdict } from "@/lib/outlook";
 import { CheckProgress } from "./check-progress";
 import { useCheck } from "./use-check";
-import { Citation } from "./ui";
+import { BusinessMatch } from "./business-match";
+
+const EDIT_LABELS: Record<keyof Facts, string> = {
+  name: "Business name",
+  category: "What kind of business",
+  city: "City",
+  country: "Country",
+  address: "Address",
+  hours: "Opening hours",
+  knownFor: "Known for",
+  website: "Website",
+  reviewUrl: "Review link",
+};
 
 export function CheckJourney({
   input,
@@ -24,6 +38,7 @@ export function CheckJourney({
   const [id, setId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [editing, setEditing] = useState(false);
   const [attempt, setAttempt] = useState(0),
     [started, setStarted] = useState(() => Date.now());
   const { check, error: pollError, refresh } = useCheck(id);
@@ -122,7 +137,7 @@ export function CheckJourney({
     >
       <div className="journey-header">
         <span id="journey-title">
-          Your {mode === "quick" ? "quick check" : "deep research"}
+          {mode === "quick" ? "Quick check" : "Deep research"}
         </span>
         <button
           type="button"
@@ -140,7 +155,7 @@ export function CheckJourney({
       )}
       {pollError && (
         <p className="error-message" role="alert">
-          Connection interrupted. Your saved answers are safe.{" "}
+          We lost the connection for a moment. Nothing is lost.{" "}
           <button type="button" className="text-link" onClick={refresh}>
             Reconnect
           </button>
@@ -179,59 +194,35 @@ export function CheckJourney({
         </>
       ) : !id ? (
         <div className="journey-confirm">
-          <p className="eyebrow">Found your business</p>
-          <h2>Right business?</h2>
-          <p>
-            Check the name, city and category. These shape five everyday
-            searches. Review the additional details below before confirming.
+          <p className="eyebrow found-eyebrow">
+            <Check size={14} aria-hidden="true" /> We found a match
           </p>
-          <div className="citation-list">
-            {candidate.sources.slice(0, 2).map((source) => (
-              <Citation key={source.id} source={source} />
-            ))}
-          </div>
+          <h2>Is this your business?</h2>
+          {!editing && facts && (
+            <BusinessMatch facts={facts} sources={candidate.sources} />
+          )}
           <form
             onSubmit={(event) => {
               event.preventDefault();
               start();
             }}
           >
-            <div className="journey-facts">
-              {(["name", "city", "category"] as const).map((key) => (
-                <div key={key}>
-                  <label htmlFor={`journey-${key}`}>{FACT_LABELS[key]}</label>
-                  <input
-                    id={`journey-${key}`}
-                    value={facts?.[key] || ""}
-                    required
-                    minLength={2}
-                    maxLength={key === "name" ? 160 : 120}
-                    onChange={(event) =>
-                      setFacts((current) =>
-                        current
-                          ? { ...current, [key]: event.target.value }
-                          : current,
-                      )
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-            <details className="journey-optional">
-              <summary>Review all business details before confirming</summary>
+            {editing && (
               <div className="journey-facts">
                 {(
                   [
+                    "name",
+                    "category",
+                    "city",
                     "country",
                     "address",
                     "hours",
-                    "knownFor",
                     "website",
                     "reviewUrl",
                   ] as const
                 ).map((key) => (
                   <div key={key}>
-                    <label htmlFor={`journey-${key}`}>{FACT_LABELS[key]}</label>
+                    <label htmlFor={`journey-${key}`}>{EDIT_LABELS[key]}</label>
                     <input
                       id={`journey-${key}`}
                       type={
@@ -240,6 +231,18 @@ export function CheckJourney({
                           : "text"
                       }
                       value={facts?.[key] || ""}
+                      required={["name", "city", "category"].includes(key)}
+                      minLength={
+                        ["name", "city", "category"].includes(key)
+                          ? 2
+                          : undefined
+                      }
+                      maxLength={key === "name" ? 160 : 200}
+                      placeholder={
+                        key === "reviewUrl"
+                          ? "Link where customers leave reviews"
+                          : "Leave blank if unsure"
+                      }
                       onChange={(event) =>
                         setFacts((current) =>
                           current
@@ -251,42 +254,65 @@ export function CheckJourney({
                   </div>
                 ))}
               </div>
-            </details>
-            <p className="notice">
-              By continuing, you confirm these details. Drafts use only these
-              facts and are never published automatically.
-            </p>
-            <button type="submit" className="button strong" disabled={busy}>
-              {busy ? "Starting your check" : "Confirm and run 5 searches"}
-              <ArrowRight size={16} />
-            </button>
+            )}
+            <div className="match-actions">
+              <button type="submit" className="button strong" disabled={busy}>
+                {busy
+                  ? "Starting"
+                  : editing
+                    ? "Save and continue"
+                    : "Yes, that's my business"}
+                <ArrowRight size={16} />
+              </button>
+              {!editing && (
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => setEditing(true)}
+                >
+                  <PencilSimple size={16} /> Something&apos;s wrong, let me fix
+                  it
+                </button>
+              )}
+            </div>
+            {facts && (
+              <p className="journey-note">
+                Next we ask AI 5 questions a customer might ask, like “
+                {broadQuestions(facts)[0].text}”. It takes about 30 seconds.
+                Nothing is posted anywhere.
+              </p>
+            )}
           </form>
         </div>
       ) : (
         <>
           {complete ? (
             <div className="quick-outcome">
-              <p className="eyebrow">
-                <Check size={16} /> Your snapshot is ready
+              <p className="eyebrow found-eyebrow">
+                <Check size={14} aria-hidden="true" /> All 5 searches done
               </p>
-              <h2>Named in {count} of 5 answers.</h2>
-              <p>
-                {count
-                  ? "Now turn that visibility into a clearer business presence."
-                  : "You have a starting point. Give AI clearer facts to find next time."}
-              </p>
-              <Link href={`/check/${id}#fixes`} className="button strong">
-                Review your fix pack
-                <ArrowRight size={16} />
-              </Link>
-              <Link href={`/check/${id}`} className="text-link">
-                Open full report
-                <ArrowRight size={16} />
-              </Link>
-              <p className="journey-method">
-                Fact-only drafts, ready for your review. Deep research adds
-                repeated runs and a verified rival diagnosis.
-              </p>
+              <h2>AI mentioned you in {count} of 5 searches.</h2>
+              <p>{verdict(count, 5, facts?.name || input.name)}</p>
+              {check && rivals(check, 3).length > 0 && (
+                <p className="outcome-rivals">
+                  AI suggested instead:{" "}
+                  {rivals(check, 3).map((r, i) => (
+                    <span key={r.name}>
+                      {i > 0 && ", "}
+                      <strong>{r.name}</strong>
+                    </span>
+                  ))}
+                </p>
+              )}
+              <div className="match-actions">
+                <Link href={`/check/${id}#fixes`} className="button strong">
+                  See what to do next
+                  <ArrowRight size={16} />
+                </Link>
+                <Link href={`/check/${id}`} className="button">
+                  Open my full report
+                </Link>
+              </div>
             </div>
           ) : null}
           <CheckProgress
@@ -305,17 +331,16 @@ export function CheckJourney({
                   disabled={busy}
                   onClick={retry}
                 >
-                  {busy ? "Retrying" : "Retry unfinished searches"}
+                  {busy ? "Trying again" : "Try the unfinished searches again"}
                 </button>
               )}
             </div>
           )}
           {!complete && (
             <p className="journey-resume">
-              You can close this panel.{" "}
-              <Link href={`/check/${id}`}>
-                Your report is saved in this browser.
-              </Link>
+              You can close this window. We keep going, and your{" "}
+              <Link href={`/check/${id}`}>report stays saved</Link> on this
+              device.
             </p>
           )}
         </>

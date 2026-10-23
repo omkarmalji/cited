@@ -6,9 +6,17 @@ const root = path.resolve("vendor/threeui");
 // come from the pinned official package. Registered source is never rewritten.
 await mkdir("src/generated", { recursive: true });
 await build({
-  entryPoints: [
-    path.join(root, "src/shaders/predictive-arc/PredictiveArcCanvas.tsx"),
-  ],
+  // Exact registered sources only: the arc canvas plus the Halftone Flow and
+  // Flow Field effects from the same registry, exported together.
+  stdin: {
+    contents: [
+      'export { PredictiveArcCanvas } from "./src/shaders/predictive-arc/PredictiveArcCanvas.tsx";',
+      'export { HalftoneFlow } from "./src/shaders/neuform-isolated/NeuformCraftEffects.tsx";',
+      'export { FlowField } from "./src/shaders/neuform-isolated/NeuformBatchEffects.tsx";',
+    ].join(String.fromCharCode(10)),
+    resolveDir: root,
+    loader: "tsx",
+  },
   outfile: "src/generated/threeui.js",
   bundle: true,
   format: "esm",

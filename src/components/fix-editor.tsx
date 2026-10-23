@@ -4,6 +4,20 @@ import Link from "next/link";
 import { Check, Copy, ArrowRight, Printer } from "@phosphor-icons/react";
 import { Badge } from "./ui";
 import { FACT_LABELS, type Facts, type Fix } from "@/lib/types";
+const PLAIN_TITLES = {
+  page: "Your business page",
+  profile: "Your Google Business Profile text",
+  reviews: "Your review request messages",
+  schema: "Code for your website",
+} as const;
+const PLAIN_HOW = {
+  page: "Read it through, then approve to publish it at its own web address.",
+  profile: "Approve it, then copy each part into your Google Business Profile.",
+  reviews:
+    "Approve it, then send these to happy customers on WhatsApp, SMS or email.",
+  schema:
+    "Approve it, then send it to whoever looks after your website. They will know where it goes.",
+} as const;
 export function FixEditor({ id, checkId }: { id: string; checkId: string }) {
   const [fix, setFix] = useState<Fix | null>(null),
     [facts, setFacts] = useState<Facts | null>(null),
@@ -70,10 +84,10 @@ export function FixEditor({ id, checkId }: { id: string; checkId: string }) {
         </Link>
         {sample && <Badge label="Sample data" />}
       </div>
-      <h1>{fix?.title || "Your fix editor."}</h1>
+      <h1>{fix ? PLAIN_TITLES[fix.type] : "Your draft"}</h1>
       <p>
-        Your confirmed facts are the boundary. Approval unlocks copying
-        {fix?.type === "page" ? " and publishes your page" : ""}.
+        {fix ? PLAIN_HOW[fix.type] : ""} Change any wording you like. To keep
+        things accurate, we only allow the facts you confirmed.
       </p>
       {error && (
         <p role="alert" className="error-message">
@@ -185,10 +199,11 @@ export function FixEditor({ id, checkId }: { id: string; checkId: string }) {
               className="panel fact-lock"
               aria-labelledby="fact-lock-title"
             >
-              <h2 id="fact-lock-title">Fact lock</h2>
+              <h2 id="fact-lock-title">Facts we can use</h2>
               <p>
-                This draft may only state these confirmed facts. Anything else
-                blocks approval.
+                You confirmed these. If you add something new, like different
+                hours, we will ask you to remove it first, so nothing false is
+                published.
               </p>
               <dl>
                 {fix.factKeys

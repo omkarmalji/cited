@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Check, CircleNotch, MagnifyingGlass } from "@phosphor-icons/react";
+import { Check, CircleNotch, Minus } from "@phosphor-icons/react";
 import type { Check as VisibilityCheck } from "@/lib/types";
-import { Citation } from "./ui";
 
+// One place to look: a status line, a bar, the question being asked right now,
+// and a plain scoreboard. Full answers and sources live in the report.
 export function CheckProgress({
   check,
   name,
@@ -29,143 +30,138 @@ export function CheckProgress({
     return () => clearInterval(timer);
   }, [since, finished]);
   const elapsed = Math.max(0, Math.floor((now - since) / 1000));
-  const deep = check && check.mode !== "quick";
+  const deep = !!check && check.mode !== "quick";
+  const perQuestion = deep ? 5 : 1;
+  const total = deep ? 8 : 5;
   const done =
-    check?.questions.filter((q) => q.runs.length >= (deep ? 5 : 1)).length || 0;
-  const tips =
-    phase === "lookup"
-      ? [
-          "We check public sources so you can confirm the right business.",
-          "Your category and city shape the questions, not your street address.",
-          "Nothing is published or changed by running a check.",
-        ]
-      : [
-          "These are questions a customer could ask before choosing where to go.",
-          "Each answer keeps its sources. You can open the evidence yourself.",
-          "Not being named is useful too. It shows where your next fix can help.",
-        ];
-  const stage =
-    phase === "lookup"
-      ? paused
-        ? "Let's check those details."
-        : "Finding your business"
-      : check?.status === "error"
-        ? "Your finished answers are saved"
-        : check?.status === "complete"
-          ? "Your answers, with sources."
-          : deep && !["queued", "questions", "runs"].includes(check.status)
-            ? check.progress
-            : "Who gets recommended? Let's find out.";
+    check?.questions.filter((q) => q.runs.length >= perQuestion).length || 0;
+  const current = check?.questions.find(
+    (q) => q.runs.length < perQuestion && !q.error,
+  );
+  const complete = check?.status === "complete";
+  if (phase === "lookup")
+    return (
+      <div className="check-progress">
+        <p className="progress-status" role="status">
+          <span className="live-indicator" />
+          {paused ? "Lookup paused" : "Looking you up"}
+          <span>{paused ? "" : `${elapsed}s`}</span>
+        </p>
+        <div className={paused ? "progress-bar" : "progress-bar busy"}>
+          <i />
+        </div>
+        <h2>
+          {paused ? "Let's check those details" : "Finding your business"}
+        </h2>
+        <p className="progress-business">
+          {name} <span>· {city}</span>
+        </p>
+        {!paused && (
+          <p className="progress-hint">
+            We&apos;re checking public listings, directories and websites. This
+            usually takes a few seconds.
+          </p>
+        )}
+      </div>
+    );
+  const after =
+    deep && check && ["diagnosis", "verifyDiagnosis"].includes(check.status)
+      ? "Working out why AI picks other businesses"
+      : deep && check && ["fixes", "verifyFixes"].includes(check.status)
+        ? "Writing your to-do list"
+        : "";
   return (
     <div className="check-progress">
-      <div className="journey-overline">
-        <span className="live-indicator" />
-        {phase === "lookup"
-          ? "Business lookup"
-          : deep
-            ? "Deep research"
-            : "Quick check"}
-        <span>
-          {check?.status === "complete"
-            ? "Ready"
-            : paused
-              ? "Paused"
-              : `${elapsed}s elapsed`}
-        </span>
-      </div>
-      <h2>{stage}</h2>
-      <p className="journey-business">
-        {name}
-        <span>{city}</span>
-      </p>
-      {phase === "lookup" ? (
-        <div className="lookup-evidence" aria-hidden="true">
-          <MagnifyingGlass size={28} />
-          <span>Public listings</span>
-          <span>Business website</span>
-          <span>Category + city</span>
-        </div>
-      ) : (
+      {!complete && (
         <>
-          <div className="answer-progress" role="status" aria-live="polite">
-            {done} of {deep ? 8 : 5} questions answered
-            {deep
-              ? ` · ${check?.questions.flatMap((q) => q.runs).length || 0} of 40 runs`
-              : ""}
+          <p className="progress-status" role="status" aria-live="polite">
+            <span className="live-indicator" />
+            {done} of {total} questions answered
+            <span>{check?.status === "error" ? "Paused" : `${elapsed}s`}</span>
+          </p>
+          <div className="progress-bar">
+            <i style={{ width: `${Math.max(4, (done / total) * 100)}%` }} />
           </div>
-          <div className="answer-track" aria-hidden="true">
-            {Array.from({ length: deep ? 8 : 5 }, (_, i) => (
-              <span className={i < done ? "done" : ""} key={i}>
-                {i < done ? <Check size={16} /> : i + 1}
-              </span>
-            ))}
-          </div>
-          <div className="live-questions">
-            {check?.questions.map((q) => (
-              <div className="live-question" key={q.id}>
-                <span className={q.runs.length ? "answer-ready" : ""}>
-                  {q.runs.length ? (
-                    <Check size={16} />
-                  ) : (
-                    <CircleNotch
-                      size={16}
-                      className={q.error ? "" : "spinner"}
-                    />
-                  )}
-                </span>
-                <div>
-                  <p>{q.text}</p>
-                  {q.runs.length ? (
-                    <>
-                      <strong>
-                        {q.runs[0].mentioned
-                          ? `${name} was named`
-                          : q.runs[0].recommendations?.length
-                            ? "Other businesses were named"
-                            : "No supported recommendation"}
-                      </strong>
-                      <p className="live-answer">{q.runs[0].answer}</p>
-                      <div className="citation-list">
-                        {q.runs[0].citationIds
-                          ?.map((id) => check.sources.find((s) => s.id === id))
-                          .filter(Boolean)
-                          .slice(0, 2)
-                          .map((source) => (
-                            <Citation key={source!.id} source={source!} />
-                          ))}
-                      </div>
-                    </>
-                  ) : (
-                    <small>
-                      {q.error ||
-                        "Searching sources and reading recommendations"}
-                    </small>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          <h2 className="progress-now">
+            {check?.status === "error" ? (
+              "Some searches didn't finish"
+            ) : after ? (
+              after
+            ) : current ? (
+              <>
+                <span>Asking AI</span>“{current.text}”
+              </>
+            ) : (
+              "Getting your questions ready"
+            )}
+          </h2>
         </>
       )}
-      {check?.status !== "error" && check?.status !== "complete" && (
-        <div className="journey-insight">
-          <span className="fact-name">
-            {elapsed > 25 && !deep ? "Taking a little longer" : "While we look"}
-          </span>
-          <p>
-            {elapsed > 25 && !deep
-              ? "Some sources are slower today. Finished answers appear above and stay saved. There is no need to restart."
-              : tips[Math.floor(elapsed / 7) % tips.length]}
-          </p>
-        </div>
+      <ol className="score-list" aria-label="Results so far">
+        {check?.questions.map((q) => {
+          const answered = q.runs.length >= perQuestion;
+          const hits = q.runs.filter((r) => r.mentioned).length;
+          const others = [
+            ...new Set(q.runs.flatMap((r) => r.recommendations || [])),
+          ]
+            .filter((n) => n.trim().toLowerCase() !== name.trim().toLowerCase())
+            .slice(0, 2);
+          const state = q.error
+            ? "error"
+            : !answered
+              ? q === current
+                ? "asking"
+                : "waiting"
+              : hits
+                ? "yes"
+                : "no";
+          return (
+            <li key={q.id} className={`score-row ${state}`}>
+              <span className="score-icon" aria-hidden="true">
+                {state === "yes" ? (
+                  <Check size={14} weight="bold" />
+                ) : state === "no" ? (
+                  <Minus size={14} weight="bold" />
+                ) : state === "asking" ? (
+                  <CircleNotch size={14} className="spinner" />
+                ) : null}
+              </span>
+              <span className="score-question">{q.text}</span>
+              <span className="score-result">
+                {state === "yes"
+                  ? deep
+                    ? `You're mentioned (${hits} of 5)`
+                    : "You're mentioned"
+                  : state === "no"
+                    ? "Not mentioned"
+                    : state === "asking"
+                      ? deep
+                        ? `Asking… ${q.runs.length} of 5`
+                        : "Asking…"
+                      : state === "error"
+                        ? "Didn't finish"
+                        : "Waiting"}
+              </span>
+              {state === "no" && others.length > 0 && (
+                <span className="score-others">
+                  AI suggested {others.join(", ")}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      {!finished && elapsed > 25 && !deep && (
+        <p className="progress-hint">
+          Taking a little longer than usual. Finished answers are saved, so
+          there&apos;s no need to start again.
+        </p>
       )}
-      <p className="journey-method">
-        {phase === "lookup"
-          ? "You confirm the details before any analysis starts."
-          : deep
-            ? "Nemotron + web search. Repeated runs and verified diagnosis."
-            : "Nemotron + web search. One answer per question, a snapshot rather than a ranking guarantee."}
-      </p>
+      {!complete && (
+        <p className="journey-method">
+          {`Answers come from NVIDIA Nemotron AI using live web search for ${city}. It shows how AI tools tend to answer, not a live ChatGPT result.`}
+        </p>
+      )}
     </div>
   );
 }

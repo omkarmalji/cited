@@ -93,8 +93,8 @@ export default function Home() {
   return (
     <Motion>
       <main id="main" className="landing-page">
+        <HeroScene />
         <section className="hero">
-          <HeroScene />
           <div className="container hero-content">
             <p className="hero-version" data-enter>
               AI visibility check · v1

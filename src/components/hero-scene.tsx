@@ -1,12 +1,12 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-const PredictiveArcCanvas = dynamic(
-  () => import("../generated/threeui").then((m) => m.PredictiveArcCanvas),
+const FlowField = dynamic(
+  () => import("../generated/threeui").then((m) => m.FlowField),
   { ssr: false },
 );
-// Data Pixel Arc is emerald by default; the component's own hue prop rotates it
-// to Cited's copper accent without touching the registered source.
+// ThreeUI Flow Field from its registered source: fine copper threads drifting
+// behind the whole landing page. Props only; the source is untouched.
 export function HeroScene() {
   const [motion, setMotion] = useState(false);
   useEffect(() => {
@@ -17,17 +17,8 @@ export function HeroScene() {
     return () => media.removeEventListener("change", update);
   }, []);
   return (
-    <div className="shader-frame" aria-hidden="true">
-      {motion && (
-        <PredictiveArcCanvas
-          variant="data-pixel"
-          mode="dark"
-          speed={1.0}
-          hue={-100}
-          saturation={1.25}
-          brightness={0.8}
-        />
-      )}
+    <div className="shader-frame page-backdrop" aria-hidden="true" inert>
+      {motion && <FlowField mode="dark" speed={0.6} density={0.7} />}
     </div>
   );
 }

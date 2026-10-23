@@ -7,7 +7,9 @@ test("landing is accessible, responsive and has real arc canvas", async ({
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "Does it say you?",
   );
-  await expect(page.locator(".shader-frame canvas")).toBeVisible();
+  await expect(
+    page.locator(".shader-frame canvas, .shader-frame iframe").first(),
+  ).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -33,8 +35,8 @@ test("saved example, edit, fact lock, approve, public page and recheck", async (
   ).toBeVisible();
   await page
     .locator(".fix-item")
-    .filter({ hasText: "Your AI-readable page" })
-    .getByRole("link", { name: "Edit and approve" })
+    .filter({ hasText: "Publish a simple page about your business" })
+    .getByRole("link", { name: "Review and use" })
     .click();
   await expect(page.getByLabel("Draft content")).toBeVisible();
   const original = await page.getByLabel("Draft content").inputValue();
@@ -66,7 +68,9 @@ test("zero mentions still useful; keyboard navigation and reduced motion", async
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await expect(page.locator(".shader-frame canvas")).toHaveCount(0);
+  await expect(
+    page.locator(".shader-frame canvas, .shader-frame iframe"),
+  ).toHaveCount(0);
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("link", { name: "Skip to content" }),
