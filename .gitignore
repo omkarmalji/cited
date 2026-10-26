@@ -10,3 +10,4 @@ playwright-report/
 artifacts/
 CONTEXT.md
 .playwright-mcp/
+SESSION_CONTEXT.md
