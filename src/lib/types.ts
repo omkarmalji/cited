@@ -1,3 +1,4 @@
+import type { AgentReadiness } from "./agent-readiness";
 export const METHOD =
   "Scores from Nemotron plus web search. Not live ChatGPT results.";
 export type Status =
@@ -88,6 +89,8 @@ export type Check = {
   findings: Finding[];
   fixes: Fix[];
   previousTotal?: number;
+  agentReadiness?: AgentReadiness;
+  pageReadiness?: AgentReadiness;
   recheckOf?: string;
   leaseUntil?: string;
   leaseToken?: string;

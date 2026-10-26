@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, Copy, ArrowRight, Printer } from "@phosphor-icons/react";
 import { Badge } from "./ui";
+import { PageLive } from "./page-live";
 import { FACT_LABELS, type Facts, type Fix } from "@/lib/types";
 const PLAIN_TITLES = {
   page: "Your business page",
@@ -84,11 +85,24 @@ export function FixEditor({ id, checkId }: { id: string; checkId: string }) {
         </Link>
         {sample && <Badge label="Sample data" />}
       </div>
-      <h1>{fix ? PLAIN_TITLES[fix.type] : "Your draft"}</h1>
-      <p>
-        {fix ? PLAIN_HOW[fix.type] : ""} Change any wording you like. To keep
-        things accurate, we only allow the facts you confirmed.
-      </p>
+      {fix ? (
+        <>
+          <h1>{PLAIN_TITLES[fix.type]}</h1>
+          <p>
+            {PLAIN_HOW[fix.type]} Change any wording you like. To keep things
+            accurate, we only allow the facts you confirmed.
+          </p>
+        </>
+      ) : (
+        !error && (
+          <div className="editor-loading" role="status" aria-live="polite">
+            <span className="skeleton skeleton-title" />
+            <span className="skeleton skeleton-line" />
+            <span className="skeleton skeleton-block" />
+            <span className="visually-hidden">Opening your draft…</span>
+          </div>
+        )
+      )}
       {error && (
         <p role="alert" className="error-message">
           {error}
@@ -217,6 +231,9 @@ export function FixEditor({ id, checkId }: { id: string; checkId: string }) {
               </dl>
             </aside>
           </div>
+          {fix.type === "page" && fix.status === "approved" && fix.slug && (
+            <PageLive checkId={checkId} slug={fix.slug} sample={sample} />
+          )}
           {fix.type === "schema" && (
             <section className="panel">
               <h2>Add this to your website.</h2>

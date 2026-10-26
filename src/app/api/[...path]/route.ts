@@ -3,12 +3,14 @@ import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import QRCode from "qrcode";
 import { owner } from "@/lib/session";
+import { siteOrigin } from "@/lib/site";
 import { getRecord, saveRecord, rateLimit, updateCheck } from "@/lib/store";
 import { configured, modelJSON, search } from "@/lib/integrations";
 import { factsSchema, buildFixes, verifyFactLock } from "@/lib/honesty";
 import { sampleCheck, examples } from "@/lib/examples";
 import { work, total } from "@/lib/pipeline";
 import { checkMode } from "@/lib/questions";
+import { checkAgentReadiness } from "@/lib/agent-readiness";
 import type { Candidate, Check, Fix } from "@/lib/types";
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -26,6 +28,17 @@ async function runAndCache(id: string) {
       id: updated.businessId,
       businessId: updated.id,
     });
+}
+// Light per-visitor limit for the cheap website check (per server instance).
+const agentChecks = new Map<string, number[]>();
+function agentCheckAllowed(identity: string) {
+  const now = Date.now(),
+    recent = (agentChecks.get(identity) || []).filter(
+      (t) => now - t < 3600_000,
+    );
+  if (recent.length >= 20) return false;
+  agentChecks.set(identity, [...recent, now]);
+  return true;
 }
 async function ownedCheck(id: string, identity: string) {
   const check = await getRecord<Check>("checks", id);
@@ -57,6 +70,21 @@ async function handler(
     const { path } = await context.params;
     const [resource, id, action] = path;
     const identity = await owner();
+    if (resource === "agents" && req.method === "GET") {
+      // Standalone agent-readiness check for any public website.
+      const url = req.nextUrl.searchParams.get("url") || "";
+      if (!url || url.length > 300) throw new Error("Enter a website address.");
+      if (!agentCheckAllowed(identity))
+        throw new Error("Too many website checks. Try again in an hour.");
+      return json({
+        readiness: await checkAgentReadiness(url, {
+          name: "",
+          city: "",
+          address: "",
+          hours: "",
+        }),
+      });
+    }
     if (resource === "resolve" && req.method === "POST") {
       if (!configured())
         return json(
@@ -235,6 +263,38 @@ async function handler(
           workerActive:
             !!check.leaseUntil && Date.parse(check.leaseUntil) > Date.now(),
         });
+      }
+      if (req.method === "GET" && action === "agents") {
+        // Can AI agents read this business online? Checks the owner's own
+        // website, or their published Cited page with ?target=page.
+        const target = req.nextUrl.searchParams.get("target");
+        const page = check.fixes.find((f) => f.type === "page" && f.slug);
+        const url =
+          target === "page"
+            ? page
+              ? new URL(`/p/${page.slug}`, siteOrigin()).toString()
+              : ""
+            : check.facts.website;
+        if (!url)
+          return json({
+            readiness: null,
+            reason: target === "page" ? "unpublished" : "no-website",
+          });
+        const cached =
+          target === "page" ? check.pageReadiness : check.agentReadiness;
+        if (
+          cached &&
+          cached.url.startsWith(url.replace(/\/$/, "")) &&
+          Date.now() - Date.parse(cached.checkedAt) < 24 * 3600_000
+        )
+          return json({ readiness: cached });
+        const readiness = await checkAgentReadiness(url, check.facts);
+        if (!check.sample)
+          await updateCheck(id, identity, (c) => {
+            if (target === "page") c.pageReadiness = readiness;
+            else c.agentReadiness = readiness;
+          });
+        return json({ readiness });
       }
       if (req.method === "POST" && action === "retry") {
         const updated = await updateCheck(id, identity, (c) => {

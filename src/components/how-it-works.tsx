@@ -26,6 +26,7 @@ const steps = [
       "NVIDIA Nemotron answers every run",
       "Tavily search supplies the sources",
       "Deep research adds cited rival explanations",
+      "Checks whether AI agents can read your website",
     ],
     tone: "blue",
   },

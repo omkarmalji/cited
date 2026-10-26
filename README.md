@@ -8,6 +8,15 @@ Live demo: [cited-dev.vercel.app](https://cited-dev.vercel.app). Four fictional 
 
 Video: refreshed narrated demo exported locally at 2:57; public YouTube publishing is on hold at the owner's request. Script: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
 
+## What makes Cited different
+
+Most AI visibility tools stop at "were you mentioned?". Cited also answers "can AI agents actually read you?", then fixes it:
+
+1. **Mentions, with evidence.** Everyday customer questions, answered by NVIDIA Nemotron with live Tavily search. Every claim links to the page it came from.
+2. **Agent readiness.** Cited checks the owner's website the way an AI agent would: is it reachable, are AI crawlers allowed in `robots.txt`, is there readable text without JavaScript, business schema, an `llms.txt` summary, a sitemap, and are the address and hours on the page. Results are in plain language with one fix each, alongside Vercel's [Is Agentic](https://is-agentic.com) score or a link to its full audit. Owners without a website can check any site from the report.
+3. **A fix that is agent-ready by construction.** The owner-approved business page at `/p/<business>` ships JSON-LD, an `llms.txt` summary at `/p/<business>/llms.txt`, and site-wide `robots.txt`, `sitemap.xml` and `llms.txt`. After publishing, Cited checks the new page with the same agent-readiness test.
+4. **Owner-approved and fact-locked.** Drafts can only use facts the owner confirmed; nothing is published without approval.
+
 ## Run locally
 
 Requires Node.js 22.16+ and npm.

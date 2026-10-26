@@ -13,6 +13,7 @@ import { named, rivals, sortQuestions, verdict } from "@/lib/outlook";
 import { checkMode, expectedAnswers, runsPerQuestion } from "@/lib/questions";
 import { useCheck } from "./use-check";
 import { CheckProgress } from "./check-progress";
+import { AgentReadinessPanel } from "./agent-readiness";
 // Owner-facing names. Fix types stay technical in code and drafts.
 const PLAIN_FIXES = {
   page: {
@@ -271,6 +272,7 @@ export function Report({ id }: { id: string }) {
               )}
             </section>
           )}
+          <AgentReadinessPanel checkId={id} sample={check.sample} />
           <section id="fixes" className="report-section">
             <div className="section-title-row">
               <h2>What to do next</h2>
